@@ -1,0 +1,12 @@
+{
+  "name": "synkro",
+  "private": true,
+  "scripts": {
+    "supabase:start": "supabase start",
+    "dev": "supabase start && pnpm --filter web dev",
+    "down": "supabase stop",
+    "build": "pnpm --filter web build",
+    "lint": "pnpm --filter web lint"
+  },
+  "packageManager": "pnpm@10.28.0"
+}
