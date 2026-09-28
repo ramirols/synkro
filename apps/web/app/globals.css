@@ -1,0 +1,323 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+
+@custom-variant dark (&:is(.dark *));
+
+
+
+:root {
+
+
+  --background: #FCFCFA;
+
+  --foreground: #17211F;
+
+
+
+  --card: #FFFFFF;
+
+  --card-foreground: #17211F;
+
+
+
+  --popover: #FFFFFF;
+
+  --popover-foreground: #17211F;
+
+
+
+  --primary: #25635B;
+
+  --primary-foreground: #FFFFFF;
+
+
+
+  --secondary: #E8F3F0;
+
+  --secondary-foreground: #25635B;
+
+
+
+  --muted: #F4F6F5;
+
+  --muted-foreground: #66736F;
+
+
+
+  --accent: #DCEFEA;
+
+  --accent-foreground: #25635B;
+
+
+
+  --destructive: #C24141;
+
+
+
+  --border: #E5E9E7;
+
+  --input: #E5E9E7;
+
+
+
+  --ring: #78B5AA;
+
+
+
+  --radius: 0.75rem;
+
+
+
+  --chart-1: #25635B;
+  --chart-2: #78B5AA;
+  --chart-3: #B6D9D1;
+  --chart-4: #DCEFEA;
+  --chart-5: #163D38;
+
+
+
+  --sidebar: #FFFFFF;
+
+  --sidebar-foreground: #17211F;
+
+  --sidebar-primary: #25635B;
+
+  --sidebar-primary-foreground: #FFFFFF;
+
+  --sidebar-accent: #E8F3F0;
+
+  --sidebar-accent-foreground: #25635B;
+
+  --sidebar-border: #E5E9E7;
+
+  --sidebar-ring: #78B5AA;
+
+}
+
+
+
+.dark {
+
+
+  --background: #111716;
+
+  --foreground: #F4F7F6;
+
+
+  --card: #18211F;
+
+  --card-foreground: #F4F7F6;
+
+
+  --popover: #18211F;
+
+  --popover-foreground: #F4F7F6;
+
+
+  --primary: #78B5AA;
+
+  --primary-foreground: #10201D;
+
+
+  --secondary: #223431;
+
+  --secondary-foreground: #DCEFEA;
+
+
+  --muted: #223431;
+
+  --muted-foreground: #AAB7B3;
+
+
+  --accent: #294640;
+
+  --accent-foreground: #DCEFEA;
+
+
+  --border:
+    rgba(255, 255, 255, .12);
+
+
+  --input:
+    rgba(255, 255, 255, .15);
+
+
+  --ring: #78B5AA;
+
+}
+
+
+
+@theme inline {
+
+
+  --color-background:
+    var(--background);
+
+  --color-foreground:
+    var(--foreground);
+
+
+  --color-card:
+    var(--card);
+
+  --color-card-foreground:
+    var(--card-foreground);
+
+
+  --color-popover:
+    var(--popover);
+
+  --color-popover-foreground:
+    var(--popover-foreground);
+
+
+  --color-primary:
+    var(--primary);
+
+  --color-primary-foreground:
+    var(--primary-foreground);
+
+
+  --color-secondary:
+    var(--secondary);
+
+  --color-secondary-foreground:
+    var(--secondary-foreground);
+
+
+  --color-muted:
+    var(--muted);
+
+  --color-muted-foreground:
+    var(--muted-foreground);
+
+
+  --color-accent:
+    var(--accent);
+
+  --color-accent-foreground:
+    var(--accent-foreground);
+
+
+  --color-border:
+    var(--border);
+
+  --color-input:
+    var(--input);
+
+  --color-ring:
+    var(--ring);
+
+
+  --radius-sm:
+    calc(var(--radius) - 4px);
+
+  --radius-md:
+    calc(var(--radius) - 2px);
+
+  --radius-lg:
+    var(--radius);
+
+  --radius-xl:
+    calc(var(--radius) + 4px);
+
+
+}
+
+
+
+@layer base {
+
+
+  * {
+
+    @apply border-border outline-ring/50;
+
+  }
+
+
+
+  html {
+
+    scroll-behavior: smooth;
+
+  }
+
+
+
+  body {
+
+    @apply bg-background text-foreground antialiased;
+
+  }
+
+
+
+  h1,
+  h2,
+  h3,
+  h4 {
+
+    letter-spacing: -0.045em;
+
+    font-weight: 600;
+
+  }
+
+
+
+  button,
+  input,
+  textarea {
+
+    font: inherit;
+
+  }
+
+
+
+}
+
+/* Global View Transitions */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.28s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+::view-transition-old(root) {
+  animation-name: synkro-fade-out;
+}
+
+::view-transition-new(root) {
+  animation-name: synkro-fade-in;
+}
+
+@keyframes synkro-fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.998);
+  }
+}
+
+@keyframes synkro-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.998);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
