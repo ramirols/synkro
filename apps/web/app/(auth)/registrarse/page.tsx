@@ -14,6 +14,8 @@ import {
   Building,
   Award,
   MessageCircle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 export default function RegisterPage() {
@@ -21,6 +23,7 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [licenseNumber, setLicenseNumber] = useState("");
   const [clinicName, setClinicName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,10 +43,25 @@ export default function RegisterPage() {
       setLoading(true);
       setErrorMsg("");
 
-      // Simulated local trial registration
+      // Guardar perfil en almacenamiento local para demo inmediata
+      if (typeof window !== "undefined") {
+        const newUserProfile = {
+          id: `prof-${Date.now()}`,
+          email: email.trim(),
+          full_name: fullName.trim(),
+          role: "owner",
+          specialty: "Psicología Clínica y de la Salud",
+          license_number: licenseNumber.trim() || "C.Ps.P. Colegiado",
+          bio: `Especialista en atención psicológica para el consultorio ${clinicName || "Synkro"}.`,
+          office_address: "Consultorio Principal",
+          default_meet_link: "https://meet.google.com/syn-kro-demo",
+        };
+        localStorage.setItem("synkro_demo_user", JSON.stringify(newUserProfile));
+      }
+
       setTimeout(() => {
         router.push("/dashboard");
-      }, 800);
+      }, 600);
     } catch (err: any) {
       console.error("Register error:", err);
       setErrorMsg("Ocurrió un error al registrar tu cuenta. Intenta de nuevo.");
@@ -159,13 +177,22 @@ export default function RegisterPage() {
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   placeholder="Mínimo 6 caracteres"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  className="h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                  tabIndex={-1}
+                  title={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
 

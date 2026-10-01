@@ -26,9 +26,9 @@ export type Patient = {
   gender: string | null;
   notes: string | null;
   status?: 'activo' | 'inactivo' | 'alta' | 'evaluacion';
-  therapeutic_approach?: string;
-  consultation_reason?: string;
-  emergency_contact?: string;
+  therapeutic_approach?: string | null;
+  consultation_reason?: string | null;
+  emergency_contact?: string | null;
   created_at: string;
 };
 
@@ -41,9 +41,9 @@ export type Appointment = {
   start_time: string;
   end_time: string | null;
   status: 'scheduled' | 'completed' | 'cancelled' | 'no_show';
-  modality?: 'presencial' | 'virtual';
-  meeting_link?: string;
-  notes?: string;
+  modality?: 'presencial' | 'virtual' | null;
+  meeting_link?: string | null;
+  notes?: string | null;
   created_at: string;
   patients?: Patient;
 };
@@ -57,7 +57,7 @@ export type Session = {
   private_notes: string | null;
   session_number?: number;
   emotional_score?: number;
-  homework?: string;
+  homework?: string | null;
   created_at: string;
   patients?: Patient;
 };

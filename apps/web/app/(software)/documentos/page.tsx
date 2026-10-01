@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase, PatientFile, Patient } from "@/lib/supabase";
+import { ClinicalDataService } from "@/lib/clinical-data";
 import {
   FileText,
   Plus,
@@ -47,25 +48,15 @@ export default function DocumentosPage() {
   const loadData = async () => {
     try {
       setLoading(true);
+      const [fData, pData] = await Promise.all([
+        ClinicalDataService.getFiles(),
+        ClinicalDataService.getPatients(),
+      ]);
 
-      const { data: fData, error: fErr } = await supabase
-        .from("patient_files")
-        .select("*, patients (id, first_name, last_name, therapeutic_approach)")
-        .order("created_at", { ascending: false });
-
-      if (fErr) throw fErr;
       setFiles(fData || []);
-
-      const { data: pData } = await supabase
-        .from("patients")
-        .select("id, first_name, last_name")
-        .order("first_name", { ascending: true });
-
-      if (pData) {
-        setPatients(pData);
-        if (pData.length > 0 && !patientId) {
-          setPatientId(pData[0].id);
-        }
+      setPatients(pData || []);
+      if (pData && pData.length > 0 && !patientId) {
+        setPatientId(pData[0].id);
       }
     } catch (err: any) {
       console.error("Error loading documents:", err.message);
@@ -122,18 +113,14 @@ export default function DocumentosPage() {
         ? `${(draggedFile.size / (1024 * 1024)).toFixed(1)} MB`
         : "1.2 MB";
 
-      const { error } = await supabase.from("patient_files").insert([
-        {
-          patient_id: patientId,
-          file_name: fileName.trim(),
-          storage_path: `patient-files/${patientId}/${Date.now()}_${fileName.trim()}`,
-          file_type: fileType,
-          category: category,
-          file_size: fileSizeFormatted,
-        },
-      ]);
-
-      if (error) throw error;
+      await ClinicalDataService.createFile({
+        patient_id: patientId,
+        file_name: fileName.trim(),
+        storage_path: `patient-files/${patientId}/${Date.now()}_${fileName.trim()}`,
+        file_type: fileType,
+        category: category,
+        file_size: fileSizeFormatted,
+      });
 
       setFileName("");
       setDraggedFile(null);

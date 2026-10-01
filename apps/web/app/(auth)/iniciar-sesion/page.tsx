@@ -11,8 +11,10 @@ import {
   Sparkles,
   ArrowRight,
   ArrowLeft,
-  HeartHandshake,
-  ShieldCheck,
+  ShieldAlert,
+  Eye,
+  EyeOff,
+  UserCheck,
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -20,6 +22,7 @@ export default function LoginPage() {
   const { login, loginDemo } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -83,7 +86,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Demo Roles Interactive Selector (SOLO Psicólogo y Paciente para clientes) */}
+        {/* Demostración Interactiva (SOLO Rol Profesional / Administrador) */}
         <div className="rounded-3xl border-2 border-primary/20 bg-secondary/40 p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -98,34 +101,51 @@ export default function LoginPage() {
           </div>
 
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Explora la experiencia clínica tanto desde la perspectiva del terapeuta como de tu paciente:
+            Ingresa directamente al entorno clínico profesional con datos y expedientes de prueba listos:
           </p>
 
-          <div className="grid grid-cols-2 gap-3 pt-1">
-            {/* Opción 1: Psicólogo */}
+          <div className="space-y-2 pt-1">
+            {/* Opción Principal: Psicólogo / Director Clínico */}
             <button
               type="button"
               onClick={() => loginDemo("psychologist")}
-              className="flex flex-col items-center text-center rounded-2xl border bg-card p-3.5 hover:border-primary hover:bg-secondary/20 transition-all shadow-2xs group"
+              className="w-full flex items-center justify-between rounded-2xl border bg-card p-3 hover:border-primary hover:bg-secondary/20 transition-all shadow-2xs group text-left"
             >
-              <div className="flex size-9 items-center justify-center rounded-xl bg-secondary text-primary group-hover:scale-105 transition-transform mb-2">
-                <Brain size={18} />
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground group-hover:scale-105 transition-transform">
+                  <Brain size={20} />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-foreground block">
+                    Rol Psicólogo / Director Clínico
+                  </span>
+                  <span className="text-[11px] text-muted-foreground block">
+                    Lic. Alejandro Mendoza V. • Agenda, Notas & Expedientes
+                  </span>
+                </div>
               </div>
-              <span className="text-xs font-bold text-foreground">Rol Psicólogo</span>
-              <span className="text-[10px] text-muted-foreground mt-0.5">Gestión, Notas & Citas</span>
+              <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all mr-1" />
             </button>
 
-            {/* Opción 2: Paciente */}
+            {/* Opción Secundaria: Consola Master Admin */}
             <button
               type="button"
-              onClick={() => loginDemo("patient")}
-              className="flex flex-col items-center text-center rounded-2xl border bg-card p-3.5 hover:border-emerald-500 hover:bg-emerald-500/10 transition-all shadow-2xs group"
+              onClick={() => loginDemo("admin")}
+              className="w-full flex items-center justify-between rounded-2xl border border-dashed bg-card/60 p-2.5 hover:border-amber-500 hover:bg-amber-500/10 transition-all text-left group"
             >
-              <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 group-hover:scale-105 transition-transform mb-2">
-                <HeartHandshake size={18} />
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
+                  <ShieldAlert size={14} />
+                </div>
+                <div>
+                  <span className="text-[11px] font-semibold text-foreground block">
+                    Consola Superadmin (admin@velyonsoft.com)
+                  </span>
+                </div>
               </div>
-              <span className="text-xs font-bold text-foreground">Rol Paciente</span>
-              <span className="text-[10px] text-muted-foreground mt-0.5">Portal, Tareas & Meet</span>
+              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 group-hover:underline">
+                Acceder →
+              </span>
             </button>
           </div>
         </div>
@@ -148,7 +168,7 @@ export default function LoginPage() {
                 <input
                   type="email"
                   required
-                  placeholder="doctor@synkro.com"
+                  placeholder="doctor@synkro.com o admin@velyonsoft.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/20"
@@ -163,20 +183,29 @@ export default function LoginPage() {
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  className="h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                  tabIndex={-1}
+                  title={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="flex h-11 w-full items-center justify-center rounded-xl bg-primary font-semibold text-xs text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 shadow-xs"
+              className="flex h-11 w-full items-center justify-center rounded-xl bg-primary font-semibold text-xs text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 shadow-xs cursor-pointer"
             >
               {loading ? "Verificando acceso..." : "Iniciar Sesión"}
             </button>

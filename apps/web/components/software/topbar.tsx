@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { Bell, Calendar, Sparkles, User, LogOut, HeartHandshake } from "lucide-react";
+import { Bell, Calendar, Sparkles, User, LogOut } from "lucide-react";
 import Link from "next/link";
 
 export default function Topbar() {
@@ -39,14 +39,6 @@ export default function Topbar() {
       </div>
 
       <div className="flex items-center gap-3">
-        <Link
-          href="/portal-paciente"
-          target="_blank"
-          className="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors shadow-2xs"
-        >
-          <HeartHandshake size={14} />
-          <span>Vista Paciente</span>
-        </Link>
 
         <Link
           href="/agenda"

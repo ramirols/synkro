@@ -14,7 +14,6 @@ import {
   LogOut,
   User,
   ShieldCheck,
-  HeartHandshake,
   Building2,
 } from "lucide-react";
 
@@ -111,16 +110,6 @@ export default function Sidebar() {
             </Link>
           );
         })}
-
-        {/* Portal del Paciente (Shortcut para que el psicólogo vea cómo lo ve su paciente) */}
-        <Link
-          href="/portal-paciente"
-          target="_blank"
-          className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors"
-        >
-          <HeartHandshake size={18} className="text-emerald-600" />
-          <span>Ver Portal Paciente</span>
-        </Link>
 
         {/* Consola exclusiva para Superadmin Velyon */}
         {isSuperAdmin && (

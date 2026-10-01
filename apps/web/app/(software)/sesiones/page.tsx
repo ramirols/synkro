@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase, Session, Patient } from "@/lib/supabase";
+import { ClinicalDataService } from "@/lib/clinical-data";
 import {
   Brain,
   Plus,
@@ -47,27 +48,15 @@ function SesionesContent() {
   const loadData = async () => {
     try {
       setLoading(true);
+      const [sData, pData] = await Promise.all([
+        ClinicalDataService.getSessions(),
+        ClinicalDataService.getPatients(),
+      ]);
 
-      // Fetch all sessions with patient details
-      const { data: sData, error: sErr } = await supabase
-        .from("sessions")
-        .select("*, patients (id, first_name, last_name, therapeutic_approach, consultation_reason)")
-        .order("created_at", { ascending: false });
-
-      if (sErr) throw sErr;
       setSessions(sData || []);
-
-      // Fetch patients
-      const { data: pData } = await supabase
-        .from("patients")
-        .select("id, first_name, last_name, therapeutic_approach")
-        .order("first_name", { ascending: true });
-
-      if (pData) {
-        setPatients(pData);
-        if (pData.length > 0 && !patientId) {
-          setPatientId(pData[0].id);
-        }
+      setPatients(pData || []);
+      if (pData && pData.length > 0 && !patientId) {
+        setPatientId(pData[0].id);
       }
     } catch (err: any) {
       console.error("Error loading sessions:", err.message);
@@ -98,39 +87,15 @@ function SesionesContent() {
       setSaving(true);
       setErrorMsg("");
 
-      // Fetch professional ID
-      const { data: prof } = await supabase
-        .from("professionals")
-        .select("id")
-        .limit(1)
-        .single();
-
-      if (!prof) {
-        throw new Error("No se encontró profesional activo configurado.");
-      }
-
-      const { error } = await supabase.from("sessions").insert([
-        {
-          patient_id: patientId,
-          professional_id: prof.id,
-          appointment_id: appointmentId || null,
-          session_number: Number(sessionNumber),
-          emotional_score: Number(emotionalScore),
-          session_summary: sessionSummary.trim() || null,
-          private_notes: privateNotes.trim() || null,
-          homework: homework.trim() || null,
-        },
-      ]);
-
-      if (error) throw error;
-
-      // If appointment was attached, mark as completed
-      if (appointmentId) {
-        await supabase
-          .from("appointments")
-          .update({ status: "completed" })
-          .eq("id", appointmentId);
-      }
+      await ClinicalDataService.createSession({
+        patient_id: patientId,
+        appointment_id: appointmentId || null,
+        session_number: Number(sessionNumber),
+        emotional_score: Number(emotionalScore),
+        session_summary: sessionSummary.trim() || null,
+        private_notes: privateNotes.trim() || null,
+        homework: homework.trim() || null,
+      });
 
       // Reset
       setSessionSummary("");

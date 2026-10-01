@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase, Patient, Appointment, Session } from "@/lib/supabase";
+import { ClinicalDataService } from "@/lib/clinical-data";
 import {
   Users,
   CalendarDays,
@@ -31,43 +32,13 @@ export default function Dashboard() {
     async function loadDashboardData() {
       try {
         setLoading(true);
-
-        // Fetch counts
-        const [
-          { count: pCount },
-          { count: aCount },
-          { count: sCount },
-          { count: fCount },
-        ] = await Promise.all([
-          supabase.from("patients").select("*", { count: "exact", head: true }),
-          supabase.from("appointments").select("*", { count: "exact", head: true }),
-          supabase.from("sessions").select("*", { count: "exact", head: true }),
-          supabase.from("patient_files").select("*", { count: "exact", head: true }),
-        ]);
-
-        setPatientsCount(pCount || 0);
-        setAppointmentsCount(aCount || 0);
-        setSessionsCount(sCount || 0);
-        setFilesCount(fCount || 0);
-
-        // Fetch upcoming appointments with patient details
-        const { data: appData } = await supabase
-          .from("appointments")
-          .select("*, patients (id, first_name, last_name, phone, therapeutic_approach, consultation_reason)")
-          .order("appointment_date", { ascending: true })
-          .order("start_time", { ascending: true })
-          .limit(5);
-
-        if (appData) setUpcomingAppointments(appData);
-
-        // Fetch recent sessions
-        const { data: sessData } = await supabase
-          .from("sessions")
-          .select("*, patients (id, first_name, last_name)")
-          .order("created_at", { ascending: false })
-          .limit(4);
-
-        if (sessData) setRecentSessions(sessData);
+        const summary = await ClinicalDataService.getDashboardSummary();
+        setPatientsCount(summary.patientsCount);
+        setAppointmentsCount(summary.appointmentsCount);
+        setSessionsCount(summary.sessionsCount);
+        setFilesCount(summary.filesCount);
+        setUpcomingAppointments(summary.upcomingAppointments);
+        setRecentSessions(summary.recentSessions);
       } catch (err) {
         console.error("Error loading dashboard data:", err);
       } finally {

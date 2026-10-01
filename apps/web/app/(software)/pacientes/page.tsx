@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase, Patient } from "@/lib/supabase";
+import { ClinicalDataService } from "@/lib/clinical-data";
 import {
   Users,
   Plus,
@@ -43,12 +44,7 @@ export default function PacientesPage() {
   const loadPatients = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("patients")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
+      const data = await ClinicalDataService.getPatients();
       setPatients(data || []);
     } catch (err: any) {
       console.error("Error fetching patients:", err.message);
@@ -72,35 +68,19 @@ export default function PacientesPage() {
       setSaving(true);
       setErrorMsg("");
 
-      // Fetch active organization
-      const { data: orgMember } = await supabase
-        .from("organization_members")
-        .select("organization_id")
-        .limit(1)
-        .single();
-
-      if (!orgMember) {
-        throw new Error("No se encontró una organización activa para asociar el paciente.");
-      }
-
-      const { data, error } = await supabase.from("patients").insert([
-        {
-          organization_id: orgMember.organization_id,
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          email: email.trim() || null,
-          phone: phone.trim() || null,
-          birth_date: birthDate || null,
-          gender: gender || null,
-          therapeutic_approach: therapeuticApproach,
-          consultation_reason: consultationReason.trim() || null,
-          emergency_contact: emergencyContact.trim() || null,
-          notes: notes.trim() || null,
-          status: "activo",
-        },
-      ]);
-
-      if (error) throw error;
+      await ClinicalDataService.createPatient({
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        email: email.trim() || null,
+        phone: phone.trim() || null,
+        birth_date: birthDate || null,
+        gender: gender || null,
+        therapeutic_approach: therapeuticApproach,
+        consultation_reason: consultationReason.trim() || null,
+        emergency_contact: emergencyContact.trim() || null,
+        notes: notes.trim() || null,
+        status: "activo",
+      });
 
       // Reset form
       setFirstName("");
@@ -115,7 +95,7 @@ export default function PacientesPage() {
       await loadPatients();
     } catch (err: any) {
       console.error("Error creating patient:", err);
-      setErrorMsg(err.message || "Error al crear el paciente");
+      setErrorMsg(err.message || "Error al registrar paciente.");
     } finally {
       setSaving(false);
     }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { ClinicalDataService } from "@/lib/clinical-data";
 import {
   BarChart3,
   TrendingUp,
@@ -26,20 +27,12 @@ export default function ReportesPage() {
     async function loadStats() {
       try {
         setLoading(true);
-        const [
-          { count: pCount },
-          { count: sCount },
-          { count: aCount },
-        ] = await Promise.all([
-          supabase.from("patients").select("*", { count: "exact", head: true }),
-          supabase.from("sessions").select("*", { count: "exact", head: true }),
-          supabase.from("appointments").select("*", { count: "exact", head: true }),
-        ]);
+        const summary = await ClinicalDataService.getDashboardSummary();
 
         setStats({
-          patients: pCount || 6,
-          sessions: sCount || 3,
-          appointments: aCount || 8,
+          patients: summary.patientsCount,
+          sessions: summary.sessionsCount,
+          appointments: summary.appointmentsCount,
           completionRate: 92,
         });
       } catch (err) {

@@ -24,7 +24,7 @@ interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
   login: (email: string, pass: string) => Promise<void>;
-  loginDemo: (role: "psychologist" | "patient" | "admin") => Promise<void>;
+  loginDemo: (role?: "psychologist" | "admin") => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -66,6 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: email,
           full_name: "Lic. Alejandro Mendoza V.",
           role: "owner",
+          specialty: "Psicología Clínica y TCC",
+          license_number: "C.Ps.P. 28419",
         });
       }
     } catch (err) {
@@ -74,12 +76,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Check initial session
+    // Verificar si hay sesión activa en Supabase o en demo local
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         fetchProfile(session.user.id, session.user.email || "");
       } else {
-        // En modo desarrollo / demo si no hay sesión, permitir datos
+        // Verificar si existe sesión demo persistida
+        if (typeof window !== "undefined") {
+          const demoUserStr = localStorage.getItem("synkro_demo_user");
+          if (demoUserStr) {
+            try {
+              const demoUser = JSON.parse(demoUserStr);
+              setUser(demoUser);
+              setLoading(false);
+              return;
+            } catch (e) {
+              localStorage.removeItem("synkro_demo_user");
+            }
+          }
+        }
         setUser(null);
       }
       setLoading(false);
@@ -91,7 +106,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         await fetchProfile(session.user.id, session.user.email || "");
       } else {
-        setUser(null);
+        if (typeof window !== "undefined" && !localStorage.getItem("synkro_demo_user")) {
+          setUser(null);
+        }
       }
       setLoading(false);
     });
@@ -101,55 +118,148 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, pass: string) => {
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password: pass,
-    });
-    if (error) {
+    const cleanEmail = email.trim();
+
+    // 1. Acceso directo por credenciales maestras de demostración
+    if (cleanEmail === "admin@velyonsoft.com" && pass === "admin123456") {
+      const adminProfile: UserProfile = {
+        id: "admin-velyon-001",
+        email: "admin@velyonsoft.com",
+        full_name: "Administrador Velyon",
+        role: "superadmin",
+      };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("synkro_demo_user", JSON.stringify(adminProfile));
+      }
+      setUser(adminProfile);
       setLoading(false);
-      throw error;
-    }
-    if (data.user) {
-      await fetchProfile(data.user.id, data.user.email || "");
-    }
-    setLoading(false);
-  };
-
-  const loginDemo = async (role: "psychologist" | "patient" | "admin") => {
-    setLoading(true);
-    let email = "demo@synkro.com";
-    let pass = "demo123456";
-    let target = "/dashboard";
-
-    if (role === "admin") {
-      email = "admin@velyonsoft.com";
-      pass = "admin123456";
-      target = "/configuracion?tab=admin";
-    } else if (role === "patient") {
-      email = "paciente@synkro.com";
-      pass = "paciente123456";
-      target = "/portal-paciente";
+      return;
     }
 
+    if (
+      (cleanEmail === "demo@synkro.com" || cleanEmail === "doctor@synkro.com") &&
+      (pass === "demo123456" || pass === "admin123456")
+    ) {
+      const demoProfile: UserProfile = {
+        id: "prof-demo-001",
+        email: cleanEmail,
+        full_name: "Lic. Alejandro Mendoza V.",
+        role: "owner",
+        specialty: "Psicología Clínica y TCC",
+        license_number: "C.Ps.P. 28419",
+        bio: "Especialista en trastornos de ansiedad, estrés y regulación emocional con más de 8 años de experiencia clínica.",
+        office_address: "Av. Benavides 1570, Miraflores, Lima",
+        default_meet_link: "https://meet.google.com/syn-kro-demo",
+      };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("synkro_demo_user", JSON.stringify(demoProfile));
+      }
+      setUser(demoProfile);
+      setLoading(false);
+      return;
+    }
+
+    // 2. Intentar autenticación real con Supabase
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password: pass,
+      });
+
       if (error) throw error;
+
       if (data.user) {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("synkro_demo_user");
+        }
         await fetchProfile(data.user.id, data.user.email || "");
       }
-      router.push(target);
     } catch (err: any) {
-      console.error("Demo login error:", err);
-      // Fallback redirect if local auth token exists
-      router.push(target);
+      // Si Supabase local/remoto no está respondiendo (ERR_CONNECTION_REFUSED / Failed to fetch),
+      // permitir acceso demo para no bloquear la presentación ni el trabajo con datos ficticios
+      const isConnectionError =
+        err?.message?.includes("Failed to fetch") ||
+        err?.name === "AuthRetryableFetchError" ||
+        err?.message?.includes("NetworkError");
+
+      if (isConnectionError) {
+        console.warn("Supabase no disponible. Iniciando en modo Demostración local:", err.message);
+        const isSuperAdmin = cleanEmail.toLowerCase().includes("admin");
+        const fallbackProfile: UserProfile = {
+          id: isSuperAdmin ? "admin-velyon-001" : "prof-demo-001",
+          email: cleanEmail,
+          full_name: isSuperAdmin ? "Administrador Velyon" : "Lic. Alejandro Mendoza V.",
+          role: isSuperAdmin ? "superadmin" : "owner",
+          specialty: "Psicología Clínica y TCC",
+          license_number: "C.Ps.P. 28419",
+          bio: "Especialista en trastornos de ansiedad, estrés y regulación emocional con más de 8 años de experiencia clínica.",
+          office_address: "Av. Benavides 1570, Miraflores, Lima",
+          default_meet_link: "https://meet.google.com/syn-kro-demo",
+        };
+        if (typeof window !== "undefined") {
+          localStorage.setItem("synkro_demo_user", JSON.stringify(fallbackProfile));
+        }
+        setUser(fallbackProfile);
+        setLoading(false);
+        return;
+      }
+
+      // Si Supabase sí está conectado pero las credenciales son genuinamente inválidas
+      setLoading(false);
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
+  const loginDemo = async (role: "psychologist" | "admin" = "psychologist") => {
+    setLoading(true);
+
+    if (role === "admin") {
+      const adminProfile: UserProfile = {
+        id: "admin-velyon-001",
+        email: "admin@velyonsoft.com",
+        full_name: "Administrador Velyon",
+        role: "superadmin",
+      };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("synkro_demo_user", JSON.stringify(adminProfile));
+      }
+      setUser(adminProfile);
+      setLoading(false);
+      router.push("/admin");
+      return;
+    }
+
+    // Rol Psicólogo / Dueño de Clínica por defecto
+    const psychologistProfile: UserProfile = {
+      id: "prof-demo-001",
+      email: "demo@synkro.com",
+      full_name: "Lic. Alejandro Mendoza V.",
+      role: "owner",
+      specialty: "Psicología Clínica y TCC",
+      license_number: "C.Ps.P. 28419",
+      bio: "Especialista en trastornos de ansiedad, estrés y regulación emocional con más de 8 años de experiencia clínica.",
+      office_address: "Av. Benavides 1570, Miraflores, Lima",
+      default_meet_link: "https://meet.google.com/syn-kro-demo",
+    };
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("synkro_demo_user", JSON.stringify(psychologistProfile));
+    }
+    setUser(psychologistProfile);
+    setLoading(false);
+    router.push("/dashboard");
+  };
+
   const logout = async () => {
     setLoading(true);
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch {}
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("synkro_demo_user");
+    }
     setUser(null);
     setLoading(false);
     router.push("/iniciar-sesion");

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase, Appointment, Patient } from "@/lib/supabase";
+import { ClinicalDataService } from "@/lib/clinical-data";
 import {
   CalendarDays,
   Plus,
@@ -115,28 +116,15 @@ export default function AgendaPage() {
   const loadData = async () => {
     try {
       setLoading(true);
+      const [aData, pData] = await Promise.all([
+        ClinicalDataService.getAppointments(),
+        ClinicalDataService.getPatients(),
+      ]);
 
-      // Fetch appointments with patient details
-      const { data: aData, error: aErr } = await supabase
-        .from("appointments")
-        .select("*, patients (id, first_name, last_name, phone, emergency_contact, therapeutic_approach, consultation_reason)")
-        .order("appointment_date", { ascending: true })
-        .order("start_time", { ascending: true });
-
-      if (aErr) throw aErr;
       setAppointments(aData || []);
-
-      // Fetch patients for selector
-      const { data: pData } = await supabase
-        .from("patients")
-        .select("id, first_name, last_name")
-        .order("first_name", { ascending: true });
-
-      if (pData) {
-        setPatients(pData);
-        if (pData.length > 0 && !selectedPatientId) {
-          setSelectedPatientId(pData[0].id);
-        }
+      setPatients(pData || []);
+      if (pData && pData.length > 0 && !selectedPatientId) {
+        setSelectedPatientId(pData[0].id);
       }
     } catch (err: any) {
       console.error("Error loading agenda data:", err.message);
@@ -166,41 +154,20 @@ export default function AgendaPage() {
       setSaving(true);
       setErrorMsg("");
 
-      const { data: orgMember } = await supabase
-        .from("organization_members")
-        .select("organization_id")
-        .limit(1)
-        .single();
-
-      const { data: prof } = await supabase
-        .from("professionals")
-        .select("id")
-        .limit(1)
-        .single();
-
-      if (!orgMember || !prof) {
-        throw new Error("No se encontró profesional o clínica configurada.");
-      }
-
       const noteContent = modality === "presencial" 
         ? `${consultorioBox}${notes ? " • " + notes.trim() : ""}`
         : notes.trim() || null;
 
-      const { error } = await supabase.from("appointments").insert([
-        {
-          organization_id: orgMember.organization_id,
-          patient_id: selectedPatientId,
-          professional_id: prof.id,
-          appointment_date: appointmentDate,
-          start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
-          modality: modality,
-          meeting_link: modality === "virtual" ? meetingLink.trim() || "https://meet.google.com/syn-kro-demo" : null,
-          notes: noteContent,
-          status: "scheduled",
-        },
-      ]);
-
-      if (error) throw error;
+      await ClinicalDataService.createAppointment({
+        patient_id: selectedPatientId,
+        appointment_date: appointmentDate,
+        start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
+        end_time: null,
+        modality: modality,
+        meeting_link: modality === "virtual" ? meetingLink.trim() || "https://meet.google.com/syn-kro-demo" : null,
+        notes: noteContent,
+        status: "scheduled",
+      });
 
       setIsModalOpen(false);
       setNotes("");
@@ -215,12 +182,7 @@ export default function AgendaPage() {
 
   const handleUpdateStatus = async (appId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from("appointments")
-        .update({ status: newStatus })
-        .eq("id", appId);
-
-      if (error) throw error;
+      await ClinicalDataService.updateAppointmentStatus(appId, newStatus);
       if (selectedAppointment && selectedAppointment.id === appId) {
         setSelectedAppointment({ ...selectedAppointment, status: newStatus });
       }
