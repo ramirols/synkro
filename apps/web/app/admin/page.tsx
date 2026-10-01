@@ -25,12 +25,26 @@ import {
 } from "lucide-react";
 
 export default function MasterAdminPage() {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const router = useRouter();
   const [copiedStep, setCopiedStep] = useState<number | null>(null);
 
   // Verification: only superadmin can see this panel
   const isSuperAdmin = user?.role === "superadmin" || user?.role === "admin";
+
+  useEffect(() => {
+    if (!loading && (!user || !isSuperAdmin)) {
+      router.push("/iniciar-sesion");
+    }
+  }, [user, loading, isSuperAdmin, router]);
+
+  if (loading || !isSuperAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const copyToClipboard = (text: string, stepIndex: number) => {
     navigator.clipboard.writeText(text);

@@ -114,7 +114,7 @@ export default function Sidebar() {
         {/* Consola exclusiva para Superadmin Velyon */}
         {isSuperAdmin && (
           <Link
-            href="/configuracion?tab=admin"
+            href="/admin"
             className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-sm font-semibold text-amber-800 dark:text-amber-300 transition-colors mt-4"
           >
             <ShieldAlert size={18} />

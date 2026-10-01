@@ -11,10 +11,8 @@ import {
   Sparkles,
   ArrowRight,
   ArrowLeft,
-  ShieldAlert,
   Eye,
   EyeOff,
-  UserCheck,
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -86,7 +84,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Demostración Interactiva (SOLO Rol Profesional / Administrador) */}
+        {/* Demostración Interactiva (Acceso Clínico 1-Click) */}
         <div className="rounded-3xl border-2 border-primary/20 bg-secondary/40 p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -104,12 +102,12 @@ export default function LoginPage() {
             Ingresa directamente al entorno clínico profesional con datos y expedientes de prueba listos:
           </p>
 
-          <div className="space-y-2 pt-1">
-            {/* Opción Principal: Psicólogo / Director Clínico */}
+          <div className="pt-1">
+            {/* Opción Única de Demo: Psicólogo / Director Clínico */}
             <button
               type="button"
-              onClick={() => loginDemo("psychologist")}
-              className="w-full flex items-center justify-between rounded-2xl border bg-card p-3 hover:border-primary hover:bg-secondary/20 transition-all shadow-2xs group text-left"
+              onClick={() => loginDemo()}
+              className="w-full flex items-center justify-between rounded-2xl border bg-card p-3.5 hover:border-primary hover:bg-secondary/20 transition-all shadow-2xs group text-left cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground group-hover:scale-105 transition-transform">
@@ -125,27 +123,6 @@ export default function LoginPage() {
                 </div>
               </div>
               <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all mr-1" />
-            </button>
-
-            {/* Opción Secundaria: Consola Master Admin */}
-            <button
-              type="button"
-              onClick={() => loginDemo("admin")}
-              className="w-full flex items-center justify-between rounded-2xl border border-dashed bg-card/60 p-2.5 hover:border-amber-500 hover:bg-amber-500/10 transition-all text-left group"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
-                  <ShieldAlert size={14} />
-                </div>
-                <div>
-                  <span className="text-[11px] font-semibold text-foreground block">
-                    Consola Superadmin (admin@velyonsoft.com)
-                  </span>
-                </div>
-              </div>
-              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 group-hover:underline">
-                Acceder →
-              </span>
             </button>
           </div>
         </div>
@@ -168,7 +145,7 @@ export default function LoginPage() {
                 <input
                   type="email"
                   required
-                  placeholder="doctor@synkro.com o admin@velyonsoft.com"
+                  placeholder="doctor@synkro.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/20"

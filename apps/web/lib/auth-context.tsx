@@ -24,7 +24,7 @@ interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
   login: (email: string, pass: string) => Promise<void>;
-  loginDemo: (role?: "psychologist" | "admin") => Promise<void>;
+  loginDemo: () => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     const cleanEmail = email.trim();
 
-    // 1. Acceso directo por credenciales maestras de demostración
+    // 1. Acceso directo por credenciales maestras de administrador privado
     if (cleanEmail === "admin@velyonsoft.com" && pass === "admin123456") {
       const adminProfile: UserProfile = {
         id: "admin-velyon-001",
@@ -183,7 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         err?.message?.includes("NetworkError");
 
       if (isConnectionError) {
-        console.warn("Supabase no disponible. Iniciando en modo Demostración local:", err.message);
+        console.warn("Supabase no disponible. Iniciando en modo local:", err.message);
         const isSuperAdmin = cleanEmail.toLowerCase().includes("admin");
         const fallbackProfile: UserProfile = {
           id: isSuperAdmin ? "admin-velyon-001" : "prof-demo-001",
@@ -212,24 +212,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loginDemo = async (role: "psychologist" | "admin" = "psychologist") => {
+  const loginDemo = async () => {
     setLoading(true);
-
-    if (role === "admin") {
-      const adminProfile: UserProfile = {
-        id: "admin-velyon-001",
-        email: "admin@velyonsoft.com",
-        full_name: "Administrador Velyon",
-        role: "superadmin",
-      };
-      if (typeof window !== "undefined") {
-        localStorage.setItem("synkro_demo_user", JSON.stringify(adminProfile));
-      }
-      setUser(adminProfile);
-      setLoading(false);
-      router.push("/admin");
-      return;
-    }
 
     // Rol Psicólogo / Dueño de Clínica por defecto
     const psychologistProfile: UserProfile = {
