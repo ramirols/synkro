@@ -44,7 +44,14 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       console.error("Login error:", err);
-      setErrorMsg("Credenciales incorrectas. Verifica tu correo y contraseña.");
+      const msg = err.message || "";
+      if (msg.includes("Invalid login credentials") || msg.includes("invalid_credentials")) {
+        setErrorMsg("Credenciales incorrectas. Verifica tu correo y contraseña.");
+      } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+        setErrorMsg("No se pudo conectar con el servidor de Supabase. Revisa tu conexión o las variables de entorno.");
+      } else {
+        setErrorMsg(msg || "Error al iniciar sesión. Intenta nuevamente.");
+      }
     } finally {
       setLoading(false);
     }
@@ -80,7 +87,7 @@ export default function LoginPage() {
             Ingresar a tu consultorio
           </h1>
           <p className="mt-2 text-xs text-muted-foreground">
-            Accede a tu agenda, expedientes clínicos y notas confidenciales.
+            Accede a tu agenda, expedientes clínicos y notas confidenciales en producción.
           </p>
         </div>
 
@@ -90,23 +97,21 @@ export default function LoginPage() {
             <div className="flex items-center gap-2">
               <Sparkles size={16} className="text-primary" />
               <span className="text-xs font-bold text-foreground">
-                Demostración Interactiva (Acceso 1-Click)
+                Demostración Interactiva (Sin Iniciar Sesión)
               </span>
             </div>
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-              Demo Piloto
+              Modo Demo
             </span>
           </div>
 
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Ingresa directamente al entorno clínico profesional con datos y expedientes de prueba listos:
+            Explora el sistema con datos clínicos de prueba totalmente aislados sin conectarse a Supabase:
           </p>
 
           <div className="pt-1">
-            {/* Opción Única de Demo: Psicólogo / Director Clínico */}
-            <button
-              type="button"
-              onClick={() => loginDemo()}
+            <Link
+              href="/demo"
               className="w-full flex items-center justify-between rounded-2xl border bg-card p-3.5 hover:border-primary hover:bg-secondary/20 transition-all shadow-2xs group text-left cursor-pointer"
             >
               <div className="flex items-center gap-3">
@@ -115,15 +120,15 @@ export default function LoginPage() {
                 </div>
                 <div>
                   <span className="text-xs font-bold text-foreground block">
-                    Rol Psicólogo / Director Clínico
+                    Abrir Entorno de Demostración
                   </span>
                   <span className="text-[11px] text-muted-foreground block">
-                    Lic. Alejandro Mendoza V. • Agenda, Notas & Expedientes
+                    Lic. Alejandro Mendoza V. • Agenda, Notas & Expedientes Ficticios
                   </span>
                 </div>
               </div>
               <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all mr-1" />
-            </button>
+            </Link>
           </div>
         </div>
 

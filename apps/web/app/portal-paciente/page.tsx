@@ -169,11 +169,10 @@ export default function PortalPacientePage() {
 
             <button
               onClick={() => setTaskDone(!taskDone)}
-              className={`flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-xs font-bold transition-all ${
-                taskDone
+              className={`flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-xs font-bold transition-all ${taskDone
                   ? "bg-emerald-500 text-white"
                   : "border border-input bg-card text-foreground hover:bg-muted"
-              }`}
+                }`}
             >
               <CheckCircle2 size={16} />
               <span>{taskDone ? "¡Tarea Realizada con Éxito!" : "Marcar como Realizada"}</span>

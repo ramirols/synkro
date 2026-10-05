@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { useClinicalData } from "@/lib/clinical-context";
 import {
   LayoutDashboard,
   Users,
@@ -12,60 +13,68 @@ import {
   Settings,
   ShieldAlert,
   LogOut,
-  User,
-  ShieldCheck,
   Building2,
 } from "lucide-react";
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const router = useRouter();
+  const { logout: authLogout } = useAuth();
+  const { basePath, isDemo, user } = useClinicalData();
 
-  const isSuperAdmin = user?.role === "superadmin" || user?.role === "admin";
+  const isSuperAdmin = !isDemo && (user?.role === "superadmin" || user?.role === "admin");
 
   const items = [
     {
       name: "Dashboard",
-      href: "/dashboard",
+      href: basePath ? basePath : "/dashboard",
       icon: LayoutDashboard,
     },
     {
       name: "Pacientes",
-      href: "/pacientes",
+      href: `${basePath}/pacientes`,
       icon: Users,
     },
     {
       name: "Agenda",
-      href: "/agenda",
+      href: `${basePath}/agenda`,
       icon: CalendarDays,
     },
     {
       name: "Sesiones Clínicas",
-      href: "/sesiones",
+      href: `${basePath}/sesiones`,
       icon: Brain,
     },
     {
       name: "Documentos",
-      href: "/documentos",
+      href: `${basePath}/documentos`,
       icon: FileText,
     },
     {
       name: "Clínica & Equipo",
-      href: "/profesionales",
+      href: `${basePath}/profesionales`,
       icon: Building2,
     },
     {
       name: "Mi Perfil & Clínica",
-      href: "/configuracion",
+      href: `${basePath}/configuracion`,
       icon: Settings,
     },
   ];
+
+  const handleLogout = async () => {
+    if (isDemo) {
+      router.push("/iniciar-sesion");
+    } else {
+      await authLogout();
+    }
+  };
 
   return (
     <aside className="fixed left-0 top-0 hidden h-screen w-72 flex-col border-r bg-card/60 backdrop-blur-md px-6 py-7 lg:flex z-30">
       <div>
         <div className="flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
+          <Link href={basePath || "/dashboard"} className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <Brain size={20} />
             </div>
@@ -79,21 +88,22 @@ export default function Sidebar() {
             </div>
           </Link>
           <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-primary">
-            {isSuperAdmin ? "Admin" : "Piloto"}
+            {isDemo ? "Modo Demo" : isSuperAdmin ? "Admin" : "Producción"}
           </span>
         </div>
 
         <p className="mt-3 text-xs text-muted-foreground">
-          Gestión clínica & práctica psicológica
+          {isDemo ? "Demostración Interactiva con Datos Ficticios" : "Gestión clínica & práctica psicológica"}
         </p>
       </div>
 
       <nav className="mt-8 space-y-1.5 flex-1">
         {items.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname?.startsWith(item.href));
+          const isDashboardLink = item.href === (basePath || "/dashboard");
+          const isActive = isDashboardLink
+            ? pathname === item.href
+            : pathname === item.href || pathname?.startsWith(`${item.href}/`);
 
           return (
             <Link
@@ -111,7 +121,7 @@ export default function Sidebar() {
           );
         })}
 
-        {/* Consola exclusiva para Superadmin Velyon */}
+        {/* Consola exclusiva para Superadmin Velyon (solo en producción) */}
         {isSuperAdmin && (
           <Link
             href="/admin"
@@ -132,10 +142,12 @@ export default function Sidebar() {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold text-foreground truncate">
-                {user?.full_name || "Lic. Alejandro Mendoza V."}
+                {user?.full_name || (isDemo ? "Lic. Alejandro Mendoza V." : "Usuario Clínico")}
               </p>
               <span className="block text-[10px] text-muted-foreground truncate">
-                {isSuperAdmin
+                {isDemo
+                  ? "Terapeuta Demo"
+                  : isSuperAdmin
                   ? "Admin Velyon"
                   : user?.specialty || "Psicólogo Titular"}
               </span>
@@ -143,9 +155,9 @@ export default function Sidebar() {
           </div>
 
           <button
-            onClick={() => logout()}
-            title="Cerrar sesión"
-            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            onClick={handleLogout}
+            title={isDemo ? "Salir de la demo" : "Cerrar sesión"}
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
           >
             <LogOut size={16} />
           </button>

@@ -28,6 +28,8 @@ export default function MasterAdminPage() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const [copiedStep, setCopiedStep] = useState<number | null>(null);
+  const [searchClinic, setSearchClinic] = useState("");
+  const [filterPlan, setFilterPlan] = useState("todos");
 
   // Verification: only superadmin can see this panel
   const isSuperAdmin = user?.role === "superadmin" || user?.role === "admin";
@@ -51,9 +53,6 @@ export default function MasterAdminPage() {
     setCopiedStep(stepIndex);
     setTimeout(() => setCopiedStep(null), 2500);
   };
-
-  const [searchClinic, setSearchClinic] = useState("");
-  const [filterPlan, setFilterPlan] = useState("todos");
 
   const clientClinics = [
     {

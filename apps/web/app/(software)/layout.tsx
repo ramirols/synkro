@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { ClinicalDataProvider } from "@/lib/clinical-context";
 import Sidebar from "@/components/software/sidebar";
 import Topbar from "@/components/software/topbar";
 
@@ -16,7 +17,9 @@ export default function SoftwareLayout({
 
   useEffect(() => {
     if (!loading) {
-      if (user?.role === "patient") {
+      if (!user) {
+        router.push("/iniciar-sesion");
+      } else if (user.role === "patient") {
         router.push("/portal-paciente");
       }
     }
@@ -35,17 +38,23 @@ export default function SoftwareLayout({
     );
   }
 
+  if (!user) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex">
-        <Sidebar />
+    <ClinicalDataProvider mode="production">
+      <div className="min-h-screen bg-background">
+        <div className="flex">
+          <Sidebar />
 
-        <div className="flex-1 lg:ml-72">
-          <Topbar />
+          <div className="flex-1 lg:ml-72">
+            <Topbar />
 
-          <main className="px-6 py-8 lg:px-10">{children}</main>
+            <main className="px-6 py-8 lg:px-10">{children}</main>
+          </div>
         </div>
       </div>
-    </div>
+    </ClinicalDataProvider>
   );
 }

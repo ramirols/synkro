@@ -18,6 +18,8 @@ import {
   EyeOff,
 } from "lucide-react";
 
+import { supabase } from "@/lib/supabase";
+
 export default function RegisterPage() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
@@ -43,28 +45,29 @@ export default function RegisterPage() {
       setLoading(true);
       setErrorMsg("");
 
-      // Guardar perfil en almacenamiento local para demo inmediata
-      if (typeof window !== "undefined") {
-        const newUserProfile = {
-          id: `prof-${Date.now()}`,
-          email: email.trim(),
-          full_name: fullName.trim(),
-          role: "owner",
-          specialty: "Psicología Clínica y de la Salud",
-          license_number: licenseNumber.trim() || "C.Ps.P. Colegiado",
-          bio: `Especialista en atención psicológica para el consultorio ${clinicName || "Synkro"}.`,
-          office_address: "Consultorio Principal",
-          default_meet_link: "https://meet.google.com/syn-kro-demo",
-        };
-        localStorage.setItem("synkro_demo_user", JSON.stringify(newUserProfile));
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+            license_number: licenseNumber.trim(),
+            clinic_name: clinicName.trim() || "Consultorio Synkro",
+            role: "owner",
+          },
+        },
+      });
+
+      if (error) {
+        throw error;
       }
 
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 600);
+      router.push("/dashboard");
     } catch (err: any) {
       console.error("Register error:", err);
-      setErrorMsg("Ocurrió un error al registrar tu cuenta. Intenta de nuevo.");
+      setErrorMsg(
+        err.message || "Ocurrió un error al registrar tu cuenta en Supabase. Intenta de nuevo."
+      );
     } finally {
       setLoading(false);
     }
@@ -240,11 +243,19 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <div className="mt-6 border-t pt-4 text-center text-xs text-muted-foreground">
-            ¿Ya tienes un consultorio registrado?{" "}
-            <Link href="/iniciar-sesion" className="font-semibold text-primary hover:underline">
-              Iniciar Sesión
-            </Link>
+          <div className="mt-6 border-t pt-4 text-center text-xs text-muted-foreground space-y-2">
+            <div>
+              ¿Ya tienes un consultorio registrado?{" "}
+              <Link href="/iniciar-sesion" className="font-semibold text-primary hover:underline">
+                Iniciar Sesión
+              </Link>
+            </div>
+            <div>
+              ¿Solo quieres probar el sistema?{" "}
+              <Link href="/demo" className="font-semibold text-primary hover:underline">
+                Explorar demostración interactiva
+              </Link>
+            </div>
           </div>
         </div>
       </div>

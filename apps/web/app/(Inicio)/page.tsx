@@ -108,7 +108,7 @@ export default function Home() {
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
                 <Link
-                  href="/iniciar-sesion"
+                  href="/demo"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-md hover:opacity-90 transition-all group"
                 >
                   <span>Probar Demostración en Vivo Gratis</span>
@@ -506,7 +506,7 @@ export default function Home() {
 
                 <div className="pt-2">
                   <Link
-                    href="/iniciar-sesion"
+                    href="/demo/agenda"
                     className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-xs font-bold text-primary-foreground shadow-xs hover:opacity-90"
                   >
                     <span>Ver Horario en la Demo</span>
@@ -944,7 +944,7 @@ export default function Home() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
               <Link
-                href="/iniciar-sesion"
+                href="/demo"
                 className="w-full sm:w-auto rounded-2xl bg-white px-8 py-3.5 text-xs font-bold text-primary shadow-lg hover:bg-white/90 transition-colors"
               >
                 Probar Demostración Interactiva
