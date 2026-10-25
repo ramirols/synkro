@@ -36,7 +36,7 @@ export default function Home() {
   const [activeTabPreview, setActiveTabPreview] = useState<"agenda" | "soap" | "portal" | "boveda">("agenda");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const whatsappBaseUrl = "https://wa.me/51999999999";
+  const whatsappBaseUrl = "https://wa.me/51997676432";
 
   const getWhatsappPlanLink = (planName: string, price: string) => {
     const text = encodeURIComponent(

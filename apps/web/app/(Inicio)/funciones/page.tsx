@@ -21,7 +21,7 @@ export const metadata = {
 };
 
 export default function FuncionesPage() {
-  const whatsappLink = "https://wa.me/51999999999?text=Hola%20Velyon!%20Quiero%20conocer%20m%C3%A1s%20sobre%20las%20funciones%20de%20Synkro%20para%20mi%20consulta.";
+  const whatsappLink = "https://wa.me/51997676432?text=Hola%20Velyon!%20Quiero%20conocer%20m%C3%A1s%20sobre%20las%20funciones%20de%20Synkro%20para%20mi%20consulta.";
 
   return (
     <>

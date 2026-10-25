@@ -28,7 +28,7 @@ export default function PublicHeader() {
   const explorarRef = useRef<HTMLDivElement>(null);
 
   const whatsappLink =
-    "https://wa.me/51999999999?text=Hola%20Velyon!%20Deseo%20informaci%C3%B3n%20sobre%20Synkro%20y%20activar%20mi%20cuenta%20de%20psicolog%C3%ADa.";
+    "https://wa.me/51997676432?text=Hola%20Velyon!%20Deseo%20informaci%C3%B3n%20sobre%20Synkro%20y%20activar%20mi%20cuenta%20de%20psicolog%C3%ADa.";
 
   // Close dropdowns on outside click
   useEffect(() => {

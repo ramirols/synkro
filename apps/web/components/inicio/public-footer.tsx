@@ -2,7 +2,7 @@ import { Link } from "next-view-transitions";
 import { Brain, MessageCircle, ShieldCheck } from "lucide-react";
 
 export default function PublicFooter() {
-  const whatsappLink = "https://wa.me/51999999999?text=Hola%20Velyon!%20Deseo%20informaci%C3%B3n%20sobre%20Synkro.";
+  const whatsappLink = "https://wa.me/51997676432?text=Hola%20Velyon!%20Deseo%20informaci%C3%B3n%20sobre%20Synkro.";
 
   return (
     <footer className="border-t bg-card text-foreground">

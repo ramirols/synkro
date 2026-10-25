@@ -32,7 +32,7 @@ export default function RegisterPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   const whatsappActivationLink =
-    "https://wa.me/51999999999?text=Hola%20Velyon!%20Quiero%20activar%20mi%20cuenta%20de%20Synkro%20y%20pagar%20con%20Yape%20/%20Tarjeta%20para%20mi%20consultorio.";
+    "https://wa.me/51997676432?text=Hola%20Velyon!%20Quiero%20activar%20mi%20cuenta%20de%20Synkro%20y%20pagar%20con%20Yape%20/%20Tarjeta%20para%20mi%20consultorio.";
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();

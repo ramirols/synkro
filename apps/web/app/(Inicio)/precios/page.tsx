@@ -20,7 +20,7 @@ export const metadata = {
 };
 
 export default function PreciosPage() {
-  const whatsappBaseUrl = "https://wa.me/51999999999";
+  const whatsappBaseUrl = "https://wa.me/51997676432";
 
   const getWhatsappPlanLink = (planName: string, price: string) => {
     const text = encodeURIComponent(

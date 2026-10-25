@@ -19,7 +19,7 @@ export const metadata = {
 };
 
 export default function SeguridadPage() {
-  const whatsappLink = "https://wa.me/51999999999?text=Hola%20Velyon!%20Tengo%20consultas%20sobre%20la%20seguridad%20y%20privacidad%20de%20Synkro.";
+  const whatsappLink = "https://wa.me/51997676432?text=Hola%20Velyon!%20Tengo%20consultas%20sobre%20la%20seguridad%20y%20privacidad%20de%20Synkro.";
 
   return (
     <>
