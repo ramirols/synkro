@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export type UserRole = "superadmin" | "admin" | "owner" | "psychologist" | "assistant" | "patient";
+export type PlatformRole = "superadmin" | "user";
 
 export interface UserProfile {
   id: string;
   email: string;
   full_name: string;
   role: UserRole;
+  platform_role?: PlatformRole;
+  organization_id?: string;
   avatar_url?: string | null;
   phone?: string | null;
   specialty?: string | null;
@@ -23,7 +26,7 @@ export interface UserProfile {
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
-  login: (email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string) => Promise<UserProfile | null>;
   loginDemo: () => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -36,20 +39,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchProfile = async (authUserId: string, email: string) => {
+  const fetchProfile = async (authUserId: string, email: string): Promise<UserProfile | null> => {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", authUserId)
-        .single();
+      const [profileRes, memberRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", authUserId)
+          .maybeSingle(),
+        supabase
+          .from("organization_members")
+          .select("organization_id, role")
+          .eq("user_id", authUserId)
+          .limit(1)
+          .maybeSingle(),
+      ]);
 
-      if (!error && data) {
-        setUser({
+      const data = profileRes.data;
+      const member = memberRes.data;
+
+      if (!profileRes.error && data) {
+        const userProf: UserProfile = {
           id: data.id,
           email: email,
           full_name: data.full_name || email.split("@")[0],
-          role: data.role || "owner",
+          // El rol operativo preferido proviene de su membresía activa en la organización
+          role: (member?.role as UserRole) || (data.role as UserRole) || "patient",
+          platform_role: (data.platform_role as PlatformRole) || "user",
+          organization_id: member?.organization_id,
           avatar_url: data.avatar_url,
           phone: data.phone,
           specialty: data.specialty,
@@ -57,24 +74,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           bio: data.bio,
           office_address: data.office_address,
           default_meet_link: data.default_meet_link,
-        });
+        };
+        setUser(userProf);
+        return userProf;
       } else {
-        // Usuario autenticado pero sin registro en profiles aún
-        setUser({
+        // Usuario autenticado pero sin registro confirmado en profiles:
+        // Seguridad: NUNCA asignar rol privilegiado 'owner' por defecto.
+        const minimalUser: UserProfile = {
           id: authUserId,
           email: email,
           full_name: email.split("@")[0],
-          role: "owner",
-        });
+          role: "patient",
+          platform_role: "user",
+        };
+        setUser(minimalUser);
+        return minimalUser;
       }
     } catch (err) {
       console.error("[Auth] Error fetching profile:", err);
-      setUser({
+      const minimalUser: UserProfile = {
         id: authUserId,
         email: email,
         full_name: email.split("@")[0],
-        role: "owner",
-      });
+        role: "patient",
+        platform_role: "user",
+      };
+      setUser(minimalUser);
+      return minimalUser;
     }
   };
 
@@ -106,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, pass: string) => {
+  const login = async (email: string, pass: string): Promise<UserProfile | null> => {
     setLoading(true);
     const cleanEmail = email.trim();
 
@@ -122,8 +148,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.user) {
-        await fetchProfile(data.user.id, data.user.email || "");
+        return await fetchProfile(data.user.id, data.user.email || "");
       }
+      return null;
     } finally {
       setLoading(false);
     }

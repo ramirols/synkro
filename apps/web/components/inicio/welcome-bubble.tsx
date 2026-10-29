@@ -91,7 +91,7 @@ export default function WelcomeBubble() {
                   <Sparkles size={11} className="text-amber-300 animate-spin" />
                 </div>
                 <p className="text-xs font-bold text-white tracking-tight">
-                  ¡Bienvenido a la práctica digital! ✨
+                  ¡Bienvenido a la práctica digital!
                 </p>
               </div>
             </button>
@@ -146,7 +146,7 @@ export default function WelcomeBubble() {
               </div>
 
               <h3 className="text-lg font-black tracking-tight text-foreground sm:text-xl">
-                ¡Bienvenido a la revolución de la psicología clínica! 👋
+                ¡Bienvenido a la revolución de la psicología clínica!
               </h3>
 
               <p className="text-xs leading-relaxed text-muted-foreground">

@@ -2,12 +2,15 @@ import { createClient } from "@supabase/supabase-js";
 export * from "./types/clinical";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+const supabaseKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "";
 
 if (!supabaseUrl || !supabaseKey) {
   if (typeof window !== "undefined") {
     console.warn(
-      "[Synkro] Variables de entorno de Supabase no detectadas. Configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY."
+      "[Synkro] Variables de entorno de Supabase no detectadas. Configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (o NEXT_PUBLIC_SUPABASE_ANON_KEY)."
     );
   }
 }

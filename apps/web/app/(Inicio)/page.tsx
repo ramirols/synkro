@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Link } from "next-view-transitions";
 import PublicHeader from "@/components/inicio/public-header";
 import PublicFooter from "@/components/inicio/public-footer";
-import WelcomeBubble from "@/components/inicio/welcome-bubble";
+import { PLANS_CONFIG } from "@/lib/config/plans";
+import { COMMERCIAL_CONFIG, getCommercialWhatsAppLink } from "@/lib/config/commercial";
 import {
   ArrowRight,
   Brain,
@@ -30,45 +31,47 @@ import {
   FileCheck,
   HeartHandshake,
   Check,
+  ExternalLink,
+  Landmark,
+  Cloud,
 } from "lucide-react";
 
 export default function Home() {
   const [activeTabPreview, setActiveTabPreview] = useState<"agenda" | "soap" | "portal" | "boveda">("agenda");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const whatsappBaseUrl = "https://wa.me/51997676432";
+  const starter = PLANS_CONFIG.starter;
+  const professional = PLANS_CONFIG.professional;
+  const clinic = PLANS_CONFIG.clinic;
 
-  const getWhatsappPlanLink = (planName: string, price: string) => {
-    const text = encodeURIComponent(
-      `¡Hola Velyon! Me interesa activar el ${planName} (${price}) de Synkro para mi práctica psicológica. ¿Me pueden enviar los datos para pagar por Yape / Tarjeta y configurar mi clínica?`
-    );
-    return `${whatsappBaseUrl}?text=${text}`;
-  };
-
-  const generalWhatsappLink = `${whatsappBaseUrl}?text=${encodeURIComponent(
-    "¡Hola Velyon! Quisiera recibir información y una demostración personalizada del software para psicólogos Synkro."
-  )}`;
+  const generalWhatsappLink = getCommercialWhatsAppLink({
+    intent: "support",
+  });
 
   const faqs = [
     {
-      q: "¿Cómo se realiza el pago de la suscripción a Synkro?",
-      a: "El pago se realiza de manera directa y personalizada con nosotros a través de WhatsApp. Aceptamos Yape, Plin, tarjetas de crédito o débito (Visa, Mastercard, American Express) y transferencias bancarias locales (BCP, BBVA, Interbank). Una vez confirmado el abono, activamos tu consultorio en menos de 5 minutos.",
+      q: "¿Cómo funciona la prueba gratuita de 14 días?",
+      a: `Al registrarte, tu consultorio o clínica cuenta inmediatamente con ${COMMERCIAL_CONFIG.trialDurationDays} días de acceso completo a todas las herramientas clínicas sin necesidad de ingresar tarjeta de crédito ni compromisos de permanencia. Podrás agendar citas, registrar pacientes y redactar notas de evolución desde el primer minuto.`,
+    },
+    {
+      q: "¿Cómo se realiza el pago y la activación de un plan de pago?",
+      a: `El pago se coordina directamente por WhatsApp con nuestro equipo administrativo al ${COMMERCIAL_CONFIG.phoneFormatted}. Aceptamos Yape y transferencias bancarias locales (BCP). Una vez validado tu comprobante por el administrador, tu suscripción se activa o renueva en el sistema de manera inmediata.`,
     },
     {
       q: "¿Mis notas clínicas y expedientes están protegidos bajo secreto profesional?",
-      a: "Totalmente. Synkro fue construido bajo la estricta normativa del Código de Ética del Colegio de Psicólogos del Perú (C.Ps.P.) y estándares internacionales de privacidad médica. Tus datos se almacenan con cifrado AES-256 en reposo y políticas de seguridad a nivel de fila (Row Level Security), de modo que solo tú tienes acceso a tus notas confidenciales.",
+      a: "Totalmente. Synkro fue construido bajo la estricta normativa del Código de Ética del Colegio de Psicólogos del Perú (C.Ps.P.) y estándares de privacidad médica. Tus datos se almacenan con cifrado en reposo y políticas de seguridad a nivel de fila (Row Level Security), con separación criptográfica entre notas de evolución y reflexiones privadas del terapeuta.",
     },
     {
       q: "¿Cómo funciona la doble capa de notas de evolución SOAP?",
-      a: "Cada sesión cuenta con dos secciones: una capa clínica estructurada (Subjetivo, Objetivo, Análisis, Plan) que puedes compartir o exportar formalmente, y una capa de 'Notas Personales del Terapeuta' 100% blindada e invisible para cualquier exportación o tercero, diseñada para tus reflexiones internas de contratransferencia.",
+      a: "Cada sesión cuenta con dos secciones: una capa clínica estructurada oficial (Subjetivo, Objetivo, Análisis, Plan) que puedes compartir o exportar formalmente, y una capa independiente de 'Notas Privadas del Terapeuta' estrictamente restringida al psicólogo autor para contratransferencia e hipótesis que nunca se comparten con terceros ni pacientes.",
     },
     {
       q: "¿Mis pacientes tienen que pagar para usar el portal del paciente?",
-      a: "No, para tus pacientes el portal es 100% gratuito. Les entregas su acceso para que puedan consultar la fecha de su próxima sesión, acceder con un clic a la sala de Google Meet, revisar sus tareas intersesión y leer documentos o consentimientos informados.",
+      a: "No, para tus pacientes el portal es 100% gratuito. Les entregas su acceso seguro para que puedan consultar la fecha de su próxima cita, acceder con un clic a la sala de Google Meet y revisar exclusivamente los documentos y consentimientos informados que decidas compartirles.",
     },
     {
       q: "¿Puedo utilizar Synkro si dirijo una clínica o centro con varios psicólogos?",
-      a: "Sí, el Plan Clínica está pensado para centros psicológicos. Permite registrar a tu equipo multidisciplinario, asignar roles, derivar pacientes internamente preservando el historial clínico, coordinar el uso de consultorios físicos (boxes) para evitar choques y supervisar casos con visado ético.",
+      a: "Sí, el Plan Clínica está diseñado para centros y policlínicos. Permite registrar hasta 10 profesionales en tu equipo, derivar pacientes internamente preservando el historial clínico, coordinar el uso de consultorios físicos (boxes) y supervisar casos éticamente.",
     },
     {
       q: "¿Puedo usar Synkro desde mi celular, tablet o laptop?",
@@ -78,8 +81,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <PublicHeader />
-
       <main className="flex-1">
         {/* HERO SECTION */}
         <section className="relative overflow-hidden border-b bg-gradient-to-b from-secondary/40 via-background to-background py-20 lg:py-28">
@@ -152,7 +153,7 @@ export default function Home() {
                   <div className="flex size-3 rounded-full bg-amber-400" />
                   <div className="flex size-3 rounded-full bg-emerald-400" />
                   <span className="ml-2 font-mono text-[11px] text-muted-foreground font-semibold">
-                    app.synkro.velyonsoft.com • Consultorio Lic. Alejandro Mendoza V. (C.Ps.P. 28419)
+                    synkro.velyonsoft.com • Consultorio Lic. Alejandro Mendoza V. (C.Ps.P. 28419)
                   </span>
                 </div>
 
@@ -219,7 +220,7 @@ export default function Home() {
                       <span className="block text-xl font-black">28</span>
                       <div className="mt-2 rounded-lg bg-white/20 p-1.5 text-left text-[10px] font-semibold space-y-0.5">
                         <span className="block font-bold">09:00 Camila V.</span>
-                        <span className="text-white/80">🏢 Box 1 (TCC)</span>
+                        <span className="flex items-center gap-1 text-white/80"><Building2 size={10} /> Box 1 (TCC)</span>
                       </div>
                     </div>
 
@@ -228,7 +229,7 @@ export default function Home() {
                       <span className="block text-xl font-black">29</span>
                       <div className="mt-2 rounded-lg bg-sky-500/10 p-1.5 text-left text-[10px] font-semibold text-sky-700 space-y-0.5">
                         <span className="block font-bold">17:00 Carlos & A.</span>
-                        <span>💻 Google Meet</span>
+                        <span className="flex items-center gap-1"><Video size={10} /> Google Meet</span>
                       </div>
                     </div>
 
@@ -237,7 +238,7 @@ export default function Home() {
                       <span className="block text-xl font-black">30</span>
                       <div className="mt-2 rounded-lg bg-secondary p-1.5 text-left text-[10px] font-semibold text-primary space-y-0.5">
                         <span className="block font-bold">15:00 Mateo H.</span>
-                        <span>🏢 Box 2</span>
+                        <span className="flex items-center gap-1"><Building2 size={10} /> Box 2</span>
                       </div>
                     </div>
 
@@ -246,7 +247,7 @@ export default function Home() {
                       <span className="block text-xl font-black">01</span>
                       <div className="mt-2 rounded-lg bg-emerald-500/10 p-1.5 text-left text-[10px] font-semibold text-emerald-700 space-y-0.5">
                         <span className="block font-bold">10:30 Lucía B.</span>
-                        <span>🏢 Box 1</span>
+                        <span className="flex items-center gap-1"><Building2 size={10} /> Box 1</span>
                       </div>
                     </div>
 
@@ -261,7 +262,7 @@ export default function Home() {
                       <span className="block text-xl font-black">03</span>
                       <div className="mt-2 rounded-lg bg-amber-500/10 p-1.5 text-left text-[10px] font-semibold text-amber-700 space-y-0.5">
                         <span className="block font-bold">11:00 Sofía M.</span>
-                        <span>💻 Meet</span>
+                        <span className="flex items-center gap-1"><Video size={10} /> Meet</span>
                       </div>
                     </div>
 
@@ -528,7 +529,7 @@ export default function Home() {
                   <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center justify-between">
                     <div>
                       <span className="font-bold text-foreground block">09:00 - 10:00 hrs • Camila Valdivia</span>
-                      <span className="text-[11px] text-emerald-800 dark:text-emerald-300">🏢 Box 1 (TCC Adultos) • Sesión 5</span>
+                      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-800 dark:text-emerald-300"><Building2 size={12} /> Box 1 (TCC Adultos) • Sesión 5</span>
                     </div>
                     <span className="rounded-md bg-emerald-500 text-white font-bold px-2 py-0.5 text-[10px]">
                       Confirmada
@@ -538,7 +539,7 @@ export default function Home() {
                   <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-3 flex items-center justify-between">
                     <div>
                       <span className="font-bold text-foreground block">11:00 - 12:00 hrs • Sofía Morales</span>
-                      <span className="text-[11px] text-sky-800 dark:text-sky-300">💻 Telepsicología • Enlace Google Meet</span>
+                      <span className="inline-flex items-center gap-1 text-[11px] text-sky-800 dark:text-sky-300"><Video size={12} /> Telepsicología • Enlace Google Meet</span>
                     </div>
                     <span className="rounded-md bg-sky-600 text-white font-bold px-2 py-0.5 text-[10px]">
                       Virtual
@@ -548,7 +549,7 @@ export default function Home() {
                   <div className="rounded-xl border border-muted bg-muted/30 p-3 flex items-center justify-between opacity-80">
                     <div>
                       <span className="font-bold text-foreground block">15:00 - 16:00 hrs • Mateo Huamán</span>
-                      <span className="text-[11px] text-muted-foreground">🏢 Box 2 (Infantil & Juego)</span>
+                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"><Building2 size={12} /> Box 2 (Infantil & Juego)</span>
                     </div>
                     <span className="rounded-md bg-muted text-muted-foreground font-bold px-2 py-0.5 text-[10px]">
                       Programada
@@ -633,7 +634,7 @@ export default function Home() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 text-xs">
               <div className="rounded-2xl border bg-card p-5 space-y-2">
                 <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 font-bold">
-                  ✓
+                  <CheckCircle2 size={16} />
                 </div>
                 <h4 className="font-bold text-foreground">Ley N° 28369 C.Ps.P.</h4>
                 <p className="text-muted-foreground leading-relaxed">
@@ -643,7 +644,7 @@ export default function Home() {
 
               <div className="rounded-2xl border bg-card p-5 space-y-2">
                 <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 font-bold">
-                  🔒
+                  <Lock size={16} />
                 </div>
                 <h4 className="font-bold text-foreground">Cifrado AES-256</h4>
                 <p className="text-muted-foreground leading-relaxed">
@@ -653,7 +654,7 @@ export default function Home() {
 
               <div className="rounded-2xl border bg-card p-5 space-y-2">
                 <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 font-bold">
-                  🛡️
+                  <ShieldCheck size={16} />
                 </div>
                 <h4 className="font-bold text-foreground">Políticas RLS en Base de Datos</h4>
                 <p className="text-muted-foreground leading-relaxed">
@@ -663,7 +664,7 @@ export default function Home() {
 
               <div className="rounded-2xl border bg-card p-5 space-y-2">
                 <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 font-bold">
-                  ☁️
+                  <Cloud size={16} />
                 </div>
                 <h4 className="font-bold text-foreground">Copias de Seguridad Diarias</h4>
                 <p className="text-muted-foreground leading-relaxed">
@@ -679,13 +680,13 @@ export default function Home() {
           <div className="mx-auto max-w-7xl px-6 lg:px-8 space-y-16">
             <div className="mx-auto max-w-3xl text-center space-y-4">
               <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-primary uppercase tracking-wider">
-                Planes Transparentes & Pagos Locales
+                Prueba de 14 Días & Planes Transparentes
               </span>
               <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-5xl">
-                Invierte en el crecimiento de tu consulta clínica.
+                Invierte en el crecimiento y orden de tu consulta.
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed max-w-xl mx-auto">
-                Sin comisiones ocultas ni contratos forzosos. Eliges tu plan y coordinas la activación y el pago directamente por WhatsApp.
+                Todos los planes incluyen <strong>14 días de prueba gratuita sin tarjeta de crédito</strong>. La activación o renovación se realiza por WhatsApp mediante Yape o transferencia BCP con confirmación personalizada.
               </p>
             </div>
 
@@ -696,47 +697,53 @@ export default function Home() {
                 <div className="space-y-4">
                   <div>
                     <span className="rounded-md bg-secondary px-2.5 py-0.5 text-[11px] font-bold text-primary">
-                      Práctica Inicial
+                      {starter.badge}
                     </span>
-                    <h3 className="mt-2 text-xl font-bold text-foreground">Starter</h3>
+                    <h3 className="mt-2 text-xl font-bold text-foreground">{starter.name}</h3>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Ideal para psicólogos independientes que están iniciando su consulta privada.
+                      {starter.tagline}
                     </p>
                   </div>
 
                   <div className="flex items-baseline gap-1 border-b pb-4">
-                    <span className="text-4xl font-black tracking-tight text-foreground">S/ 49</span>
-                    <span className="text-xs text-muted-foreground font-semibold">/ mes (PEN)</span>
+                    <span className="text-4xl font-black tracking-tight text-foreground">
+                      {starter.currencySymbol} {starter.priceMonthly}
+                    </span>
+                    <span className="text-xs text-muted-foreground font-semibold">{starter.billingPeriodLabel}</span>
                   </div>
 
                   <ul className="space-y-2.5 text-xs text-muted-foreground">
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Hasta 20 pacientes activos
-                    </li>
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Horario semanal visual y agenda
-                    </li>
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Fichas clínicas e historial digital
-                    </li>
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Notas de sesión estructuradas
-                    </li>
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Portal del paciente incluido
-                    </li>
+                    {starter.features.map((feat, i) => (
+                      <li key={i} className="flex items-center gap-2 text-foreground font-medium">
+                        <Check size={14} className="text-primary shrink-0" /> {feat}
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
-                <a
-                  href={getWhatsappPlanLink("Plan Starter", "S/ 49/mes")}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-input bg-card py-3 text-xs font-bold text-foreground hover:bg-muted transition-colors shadow-2xs"
-                >
-                  <MessageCircle size={15} className="text-emerald-600" />
-                  <span>Activar por WhatsApp</span>
-                </a>
+                <div className="space-y-2 pt-2">
+                  <a
+                    href={getCommercialWhatsAppLink({
+                      intent: "plan_hire",
+                      planName: starter.name,
+                      price: `${starter.currencySymbol} ${starter.priceMonthly}/mes`,
+                    })}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity shadow-xs"
+                  >
+                    <MessageCircle size={15} />
+                    <span>Consultar por WhatsApp</span>
+                  </a>
+
+                  <Link
+                    href="/demo"
+                    className="flex items-center justify-center gap-1.5 rounded-2xl border border-input bg-card py-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  >
+                    <span>Explorar en Demo</span>
+                    <ArrowRight size={13} />
+                  </Link>
+                </div>
               </div>
 
               {/* PLAN 2: PROFESSIONAL (RECOMENDADO) */}
@@ -748,50 +755,53 @@ export default function Home() {
                 <div className="space-y-4">
                   <div>
                     <span className="rounded-md bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary">
-                      Práctica Consolidada
+                      {professional.badge}
                     </span>
-                    <h3 className="mt-2 text-xl font-bold text-foreground">Professional</h3>
+                    <h3 className="mt-2 text-xl font-bold text-foreground">{professional.name}</h3>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Para terapeutas consolidados que buscan automatizar notas y escalar su consulta.
+                      {professional.tagline}
                     </p>
                   </div>
 
                   <div className="flex items-baseline gap-1 border-b pb-4">
-                    <span className="text-4xl font-black tracking-tight text-foreground">S/ 89</span>
-                    <span className="text-xs text-muted-foreground font-semibold">/ mes (PEN)</span>
+                    <span className="text-4xl font-black tracking-tight text-foreground">
+                      {professional.currencySymbol} {professional.priceMonthly}
+                    </span>
+                    <span className="text-xs text-muted-foreground font-semibold">{professional.billingPeriodLabel}</span>
                   </div>
 
                   <ul className="space-y-2.5 text-xs text-muted-foreground">
-                    <li className="flex items-center gap-2 text-foreground font-bold">
-                      <Check size={14} className="text-primary shrink-0" /> Pacientes Ilimitados
-                    </li>
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Notas SOAP asistidas por Inteligencia Artificial
-                    </li>
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Doble capa de notas privadas del terapeuta
-                    </li>
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Bóveda de archivos con visor in-app
-                    </li>
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Telepsicología con Google Meet integrado
-                    </li>
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Soporte prioritario por WhatsApp directo
-                    </li>
+                    {professional.features.map((feat, i) => (
+                      <li key={i} className="flex items-center gap-2 text-foreground font-medium">
+                        <Check size={14} className="text-primary shrink-0" /> {feat}
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
-                <a
-                  href={getWhatsappPlanLink("Plan Professional", "S/ 89/mes")}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-xs font-bold text-primary-foreground shadow-md hover:opacity-90 transition-opacity"
-                >
-                  <MessageCircle size={15} />
-                  <span>Elegir Plan Professional</span>
-                </a>
+                <div className="space-y-2 pt-2">
+                  <a
+                    href={getCommercialWhatsAppLink({
+                      intent: "plan_hire",
+                      planName: professional.name,
+                      price: `${professional.currencySymbol} ${professional.priceMonthly}/mes`,
+                    })}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-xs font-bold text-primary-foreground shadow-md hover:opacity-90 transition-opacity"
+                  >
+                    <MessageCircle size={15} />
+                    <span>Activar por WhatsApp</span>
+                  </a>
+
+                  <Link
+                    href="/demo"
+                    className="flex items-center justify-center gap-1.5 rounded-2xl border border-input bg-card py-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  >
+                    <span>Explorar en Demo</span>
+                    <ArrowRight size={13} />
+                  </Link>
+                </div>
               </div>
 
               {/* PLAN 3: CLINIC / EMPRESA */}
@@ -799,47 +809,53 @@ export default function Home() {
                 <div className="space-y-4">
                   <div>
                     <span className="rounded-md bg-secondary px-2.5 py-0.5 text-[11px] font-bold text-primary">
-                      Centros & Policlínicos
+                      {clinic.badge}
                     </span>
-                    <h3 className="mt-2 text-xl font-bold text-foreground">Clínica / Empresa</h3>
+                    <h3 className="mt-2 text-xl font-bold text-foreground">{clinic.name}</h3>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Para centros de psicología, consultorios asociados y equipos multidisciplinarios.
+                      {clinic.tagline}
                     </p>
                   </div>
 
                   <div className="flex items-baseline gap-1 border-b pb-4">
-                    <span className="text-4xl font-black tracking-tight text-foreground">S/ 189</span>
-                    <span className="text-xs text-muted-foreground font-semibold">/ mes (PEN)</span>
+                    <span className="text-4xl font-black tracking-tight text-foreground">
+                      {clinic.currencySymbol} {clinic.priceMonthly}
+                    </span>
+                    <span className="text-xs text-muted-foreground font-semibold">{clinic.billingPeriodLabel}</span>
                   </div>
 
                   <ul className="space-y-2.5 text-xs text-muted-foreground">
-                    <li className="flex items-center gap-2 text-foreground font-bold">
-                      <Check size={14} className="text-primary shrink-0" /> Múltiples psicólogos y terapeutas
-                    </li>
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Sistema de derivaciones y triage interno
-                    </li>
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Gestión de consultorios físicos (Boxes)
-                    </li>
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Comité de supervisión y visado ético
-                    </li>
-                    <li className="flex items-center gap-2 text-foreground font-medium">
-                      <Check size={14} className="text-primary shrink-0" /> Métricas de rendimiento de la clínica
-                    </li>
+                    {clinic.features.map((feat, i) => (
+                      <li key={i} className="flex items-center gap-2 text-foreground font-medium">
+                        <Check size={14} className="text-primary shrink-0" /> {feat}
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
-                <a
-                  href={getWhatsappPlanLink("Plan Clínica / Empresa", "S/ 189/mes")}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-input bg-card py-3 text-xs font-bold text-foreground hover:bg-muted transition-colors shadow-2xs"
-                >
-                  <MessageCircle size={15} className="text-emerald-600" />
-                  <span>Activar por WhatsApp</span>
-                </a>
+                <div className="space-y-2 pt-2">
+                  <a
+                    href={getCommercialWhatsAppLink({
+                      intent: "plan_hire",
+                      planName: clinic.name,
+                      price: `${clinic.currencySymbol} ${clinic.priceMonthly}/mes`,
+                    })}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity shadow-xs"
+                  >
+                    <MessageCircle size={15} />
+                    <span>Cotizar Centro por WhatsApp</span>
+                  </a>
+
+                  <Link
+                    href="/demo"
+                    className="flex items-center justify-center gap-1.5 rounded-2xl border border-input bg-card py-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  >
+                    <span>Explorar en Demo</span>
+                    <ArrowRight size={13} />
+                  </Link>
+                </div>
               </div>
             </div>
 
@@ -849,42 +865,54 @@ export default function Home() {
                 <div>
                   <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                     <Smartphone size={20} className="text-primary" />
-                    Métodos de Pago Aceptados en Perú y Latinoamérica
+                    Métodos de Pago Transparentes en Perú
                   </h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    La activación se realiza de manera 100% directa y personalizada conmigo por WhatsApp.
+                    Sin cobros automáticos ni suscripciones fantasma. La activación y renovación se coordina de manera directa por WhatsApp al <strong className="text-foreground">{COMMERCIAL_CONFIG.phoneFormatted}</strong>.
                   </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-xl border bg-card px-3 py-1.5 text-xs font-bold text-purple-700 dark:text-purple-300 shadow-2xs">
-                    📱 Yape
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border bg-card px-3 py-1.5 text-xs font-bold text-purple-700 dark:text-purple-300 shadow-2xs">
+                    <Smartphone size={14} className="text-purple-600" />
+                    <span>Yape ({COMMERCIAL_CONFIG.yape.number})</span>
                   </span>
-                  <span className="rounded-xl border bg-card px-3 py-1.5 text-xs font-bold text-cyan-700 dark:text-cyan-300 shadow-2xs">
-                    📱 Plin
-                  </span>
-                  <span className="rounded-xl border bg-card px-3 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 shadow-2xs">
-                    💳 Visa / Mastercard
-                  </span>
-                  <span className="rounded-xl border bg-card px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 shadow-2xs">
-                    🏦 Transferencia BCP / BBVA
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border bg-card px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 shadow-2xs">
+                    <Landmark size={14} className="text-amber-600" />
+                    <span>Transferencia BCP</span>
                   </span>
                 </div>
               </div>
 
               <div className="grid sm:grid-cols-3 gap-4 text-xs text-muted-foreground">
                 <div className="space-y-1">
-                  <span className="font-bold text-foreground block">1. Eliges tu Plan</span>
-                  <p>Haces clic en &apos;Activar por WhatsApp&apos; y nos escribes con el plan seleccionado.</p>
+                  <span className="font-bold text-foreground block">1. 14 Días de Prueba</span>
+                  <p>Te registras en 30 segundos sin ingresar ninguna tarjeta. Pruebas todas las herramientas en tu práctica real.</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="font-bold text-foreground block">2. Pagas Cómodamente</span>
-                  <p>Te enviamos el código QR de Yape/Plin o el link para pagar con cualquier tarjeta.</p>
+                  <span className="font-bold text-foreground block">2. Pago Directo por Yape / BCP</span>
+                  <p>Cuando decidas continuar, transfieres el monto mensual exacto y compartes tu captura al WhatsApp oficial.</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="font-bold text-foreground block">3. Consultorio Listo en 5 Min</span>
-                  <p>Configuramos tu cuenta con tu nombre, colegiatura C.Ps.P. y datos de clínica.</p>
+                  <span className="font-bold text-foreground block">3. Confirmación & Continuidad</span>
+                  <p>El administrador confirma tu pago y tu cuenta se renueva al instante. Tus expedientes nunca se eliminan.</p>
                 </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t">
+                <Link
+                  href="/precios"
+                  className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                >
+                  Ver comparativa detallada de características y límites en /precios →
+                </Link>
+
+                <Link
+                  href="/demo"
+                  className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1"
+                >
+                  Probar demostración interactiva en vivo (sin registro) →
+                </Link>
               </div>
             </div>
           </div>
@@ -962,9 +990,6 @@ export default function Home() {
           </div>
         </section>
       </main>
-
-      <WelcomeBubble />
-      <PublicFooter />
     </div>
   );
 }

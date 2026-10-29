@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ViewTransitions } from "next-view-transitions";
-import "@fontsource-variable/inter";
-import "@fontsource-variable/plus-jakarta-sans";
+import "@fontsource-variable/manrope";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 

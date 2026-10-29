@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Patient, Session, Appointment, PatientFile } from "@/lib/types/clinical";
 import { useClinicalData } from "@/lib/clinical-context";
+import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
 import {
   ArrowLeft,
   Calendar,
@@ -15,10 +16,15 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  UserCheck,
+  UserX,
+  Link2,
+  Copy,
+  Check,
 } from "lucide-react";
 
 export default function PacienteDetailView({ id }: { id: string }) {
-  const { service, basePath } = useClinicalData();
+  const { service, basePath, isDemo } = useClinicalData();
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -27,6 +33,15 @@ export default function PacienteDetailView({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [showPrivateNotes, setShowPrivateNotes] = useState(true);
+
+  // Portal patient invitation state
+  const [invitationLoading, setInvitationLoading] = useState(false);
+  const [invitationUrl, setInvitationUrl] = useState<string | null>(null);
+  const [invitationFeedback, setInvitationFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function loadPatientDetails() {
@@ -64,6 +79,72 @@ export default function PacienteDetailView({ id }: { id: string }) {
       loadPatientDetails();
     }
   }, [id, service]);
+
+  const handleGenerateInvitation = async () => {
+    if (isDemo) {
+      notifyDemoWriteBlocked("Generar Invitación al Portal del Paciente");
+      return;
+    }
+    if (!service.createPatientPortalInvitation || !patient) return;
+    try {
+      setInvitationLoading(true);
+      setInvitationFeedback(null);
+      const res = await service.createPatientPortalInvitation(patient.id);
+      setInvitationUrl(res.invitation_url);
+      setInvitationFeedback({
+        type: "success",
+        message: "Enlace generado con éxito. Válido durante 7 días.",
+      });
+      setPatient({
+        ...patient,
+        portal_status: "invited",
+      });
+    } catch (err: any) {
+      setInvitationFeedback({
+        type: "error",
+        message: err.message || "Error al generar invitación.",
+      });
+    } finally {
+      setInvitationLoading(false);
+    }
+  };
+
+  const handleRevokePortal = async () => {
+    if (isDemo) {
+      notifyDemoWriteBlocked("Revocar Acceso al Portal del Paciente");
+      return;
+    }
+    if (!service.revokePatientPortalAccess || !patient) return;
+    if (!confirm("¿Estás seguro de que deseas revocar el acceso del paciente al portal?")) return;
+    try {
+      setInvitationLoading(true);
+      setInvitationFeedback(null);
+      await service.revokePatientPortalAccess(patient.id);
+      setInvitationUrl(null);
+      setInvitationFeedback({
+        type: "success",
+        message: "Acceso al portal revocado correctamente.",
+      });
+      setPatient({
+        ...patient,
+        portal_status: "revoked",
+      });
+    } catch (err: any) {
+      setInvitationFeedback({
+        type: "error",
+        message: err.message || "Error al revocar acceso.",
+      });
+    } finally {
+      setInvitationLoading(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!invitationUrl) return;
+    navigator.clipboard.writeText(invitationUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (loading) {
     return (
@@ -323,6 +404,110 @@ export default function PacienteDetailView({ id }: { id: string }) {
 
         {/* Right Sidebar: Files & Upcoming Citas (4 Cols) */}
         <div className="space-y-6 lg:col-span-4">
+          {/* Portal del Paciente Card */}
+          <div className="rounded-2xl border bg-card p-5 shadow-xs">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <Shield size={16} className="text-primary" />
+                <h3 className="text-sm font-bold text-foreground">Portal del Paciente</h3>
+              </div>
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
+                  patient.portal_status === "active"
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    : patient.portal_status === "invited"
+                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    : patient.portal_status === "revoked"
+                    ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {patient.portal_status === "active"
+                  ? "Activo / Vinculado"
+                  : patient.portal_status === "invited"
+                  ? "Invitación Pendiente"
+                  : patient.portal_status === "revoked"
+                  ? "Acceso Revocado"
+                  : "Sin Invitar"}
+              </span>
+            </div>
+
+            <div className="mt-3.5 space-y-3 text-xs">
+              <p className="text-muted-foreground leading-relaxed">
+                Permite al paciente acceder a sus citas, videoconferencias y documentos autorizados mediante su cuenta personal verificada.
+              </p>
+
+              {invitationFeedback && (
+                <div
+                  className={`rounded-xl p-2.5 text-xs font-medium flex items-center gap-2 ${
+                    invitationFeedback.type === "success"
+                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+                      : "bg-destructive/10 text-destructive border border-destructive/20"
+                  }`}
+                >
+                  <AlertCircle size={14} className="shrink-0" />
+                  <span>{invitationFeedback.message}</span>
+                </div>
+              )}
+
+              {invitationUrl && (
+                <div className="space-y-2 rounded-xl bg-muted/40 p-3 border">
+                  <span className="font-semibold text-foreground text-[11px] block">
+                    Enlace de Activación (7 días):
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={invitationUrl}
+                      className="w-full rounded-lg border bg-background px-2.5 py-1 text-[11px] text-muted-foreground font-mono truncate select-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+                    >
+                      {copied ? <Check size={12} /> : <Copy size={12} />}
+                      <span>{copied ? "Copiado" : "Copiar"}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                {patient.portal_status !== "active" && (
+                  <button
+                    type="button"
+                    onClick={handleGenerateInvitation}
+                    disabled={invitationLoading}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
+                  >
+                    <Link2 size={13} />
+                    <span>
+                      {invitationLoading
+                        ? "Generando..."
+                        : patient.portal_status === "invited"
+                        ? "Regenerar Enlace"
+                        : "Generar Invitación"}
+                    </span>
+                  </button>
+                )}
+
+                {(patient.portal_status === "active" || patient.portal_status === "invited") && (
+                  <button
+                    type="button"
+                    onClick={handleRevokePortal}
+                    disabled={invitationLoading}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/5 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-500/10 transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    <UserX size={13} />
+                    <span>Revocar Acceso</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Files Vault */}
           <div className="rounded-2xl border bg-card p-5 shadow-xs">
             <div className="flex items-center justify-between border-b pb-3">

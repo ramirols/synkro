@@ -16,12 +16,16 @@ import {
   MessageCircle,
   Eye,
   EyeOff,
+  Users,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
+import { COMMERCIAL_CONFIG, getCommercialWhatsAppLink } from "@/lib/config/commercial";
+import { OrganizationType } from "@/lib/config/plans";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [organizationType, setOrganizationType] = useState<OrganizationType>("independent");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,10 +33,12 @@ export default function RegisterPage() {
   const [licenseNumber, setLicenseNumber] = useState("");
   const [clinicName, setClinicName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmationNeeded, setConfirmationNeeded] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const whatsappActivationLink =
-    "https://wa.me/51997676432?text=Hola%20Velyon!%20Quiero%20activar%20mi%20cuenta%20de%20Synkro%20y%20pagar%20con%20Yape%20/%20Tarjeta%20para%20mi%20consultorio.";
+  const whatsappActivationLink = getCommercialWhatsAppLink({
+    intent: "trial_activation",
+  });
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,14 +58,19 @@ export default function RegisterPage() {
           data: {
             full_name: fullName.trim(),
             license_number: licenseNumber.trim(),
-            clinic_name: clinicName.trim() || "Consultorio Synkro",
-            role: "owner",
+            clinic_name: clinicName.trim() || (organizationType === "clinic" ? "Centro Psicológico" : "Mi Consulta"),
+            organization_type: organizationType,
           },
         },
       });
 
       if (error) {
         throw error;
+      }
+
+      if (!data.session && data.user) {
+        setConfirmationNeeded(true);
+        return;
       }
 
       router.push("/dashboard");
@@ -138,7 +149,65 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <form onSubmit={handleRegister} className="space-y-4">
+          {confirmationNeeded ? (
+            <div className="space-y-4 text-center py-4 animate-in fade-in duration-300">
+              <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <Mail size={32} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-foreground">Verifica tu correo electrónico</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Hemos enviado un correo de confirmación a <strong className="text-foreground">{email}</strong>.
+                  Por favor abre el enlace para activar tu consultorio e iniciar sesión.
+                </p>
+              </div>
+              <div className="pt-2">
+                <Link
+                  href="/iniciar-sesion"
+                  className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90 w-full"
+                >
+                  Ir a Iniciar Sesión
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleRegister} className="space-y-4">
+            {/* Modalidad de Práctica */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Tipo de Práctica Clínica *
+              </label>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setOrganizationType("independent")}
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all ${
+                    organizationType === "independent"
+                      ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
+                      : "border-input bg-card text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Brain size={20} className="mb-1" />
+                  <span className="text-xs">Psicólogo(a)</span>
+                  <span className="text-[10px] font-normal opacity-80">Independiente</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setOrganizationType("clinic")}
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all ${
+                    organizationType === "clinic"
+                      ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
+                      : "border-input bg-card text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Building size={20} className="mb-1" />
+                  <span className="text-xs">Centro o Empresa</span>
+                  <span className="text-[10px] font-normal opacity-80">Multiprofesional</span>
+                </button>
+              </div>
+            </div>
+
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
                 Nombre Completo del Profesional *
@@ -218,13 +287,13 @@ export default function RegisterPage() {
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                  Nombre Consultorio / Centro
+                  {organizationType === "clinic" ? "Nombre de la Clínica *" : "Nombre del Consultorio"}
                 </label>
                 <div className="relative">
                   <Building size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="text"
-                    placeholder="Consultorio Synkro"
+                    placeholder={organizationType === "clinic" ? "Centro Terapéutico San Isidro" : "Consulta Psicológica"}
                     value={clinicName}
                     onChange={(e) => setClinicName(e.target.value)}
                     className="h-11 w-full rounded-xl border bg-background pl-9 pr-3 text-xs outline-none focus:ring-2 focus:ring-primary/20"
@@ -236,12 +305,13 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-xs text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 shadow-xs"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-xs text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 shadow-xs cursor-pointer"
             >
-              <span>{loading ? "Creando consultorio..." : "Crear Cuenta Gratis (14 Días)"}</span>
+              <span>{loading ? "Creando espacio clínico..." : "Iniciar Prueba Gratuita (14 Días)"}</span>
               <ArrowRight size={14} />
             </button>
           </form>
+          )}
 
           <div className="mt-6 border-t pt-4 text-center text-xs text-muted-foreground space-y-2">
             <div>

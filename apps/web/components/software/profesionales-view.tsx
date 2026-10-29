@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useClinicalData } from "@/lib/clinical-context";
+import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
 import {
   Building2,
   Users2,
@@ -27,6 +29,7 @@ import {
 } from "lucide-react";
 
 export default function ProfesionalesView() {
+  const { isDemo } = useClinicalData();
   const [activeTab, setActiveTab] = useState<"equipo" | "derivaciones" | "boxes" | "supervision">("equipo");
   const [loading, setLoading] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
@@ -212,16 +215,28 @@ export default function ProfesionalesView() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsReferralModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-primary/30 bg-secondary/50 px-3.5 py-2 text-xs font-semibold text-primary hover:bg-secondary transition-colors"
+            onClick={() => {
+              if (isDemo) {
+                notifyDemoWriteBlocked("Nueva Derivación / Triage");
+                return;
+              }
+              setIsReferralModalOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-primary/30 bg-secondary/50 px-3.5 py-2 text-xs font-semibold text-primary hover:bg-secondary transition-colors cursor-pointer"
           >
             <ArrowRightLeft size={14} />
             <span>Nueva Derivación</span>
           </button>
 
           <button
-            onClick={() => setIsInviteModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-90 transition-opacity"
+            onClick={() => {
+              if (isDemo) {
+                notifyDemoWriteBlocked("Invitar Terapeuta a la Clínica");
+                return;
+              }
+              setIsInviteModalOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-90 transition-opacity cursor-pointer"
           >
             <UserPlus size={15} />
             <span>Invitar Profesional</span>
@@ -371,10 +386,14 @@ export default function ProfesionalesView() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
+                        if (isDemo) {
+                          notifyDemoWriteBlocked("Derivar Caso Clínico");
+                          return;
+                        }
                         setRefTo(therapist.name);
                         setIsReferralModalOpen(true);
                       }}
-                      className="rounded-lg border px-3 py-1 text-xs font-semibold text-primary hover:bg-secondary/40 transition-colors"
+                      className="rounded-lg border px-3 py-1 text-xs font-semibold text-primary hover:bg-secondary/40 transition-colors cursor-pointer"
                     >
                       Derivar Caso
                     </button>

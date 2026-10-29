@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Patient } from "@/lib/types/clinical";
 import { useClinicalData } from "@/lib/clinical-context";
+import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
 import {
   Users,
   Plus,
@@ -153,6 +154,10 @@ export default function PacientesView() {
 
         <button
           onClick={() => {
+            if (isDemo) {
+              notifyDemoWriteBlocked("Crear Nuevo Paciente");
+              return;
+            }
             setErrorMsg("");
             setIsModalOpen(true);
           }}

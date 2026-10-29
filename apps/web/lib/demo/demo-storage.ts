@@ -5,6 +5,7 @@ export const DEMO_PROFILE = {
   email: "demo@synkro.com",
   full_name: "Lic. Alejandro Mendoza V.",
   role: "owner" as const,
+  platform_role: "user" as const,
   specialty: "Psicología Clínica y TCC",
   license_number: "C.Ps.P. 28419",
   bio: "Especialista en trastornos de ansiedad, estrés y regulación emocional con más de 8 años de experiencia clínica.",
@@ -230,6 +231,14 @@ export const INITIAL_SESSIONS: Session[] = [
     emotional_score: 7,
     session_summary:
       "Se revisó autorregistro de pensamientos distorsionados durante situaciones de sobrecarga laboral. La paciente logró identificar sesgos de catastrofismo y sobregeneralización. Muestra mayor asertividad en límites con su jefatura.",
+    soap_subjective:
+      "Paciente refiere menor nivel de ansiedad general (SUDS 4/10). Expresa satisfacción por haber logrado decir 'no' a una asignación de última hora en su trabajo sin experimentar taquicardia severa.",
+    soap_objective:
+      "Contacto visual sostenido, postura relajada, afecto congruente con el relato. Presenta autorregistro impreso con 4 entradas completadas metódicamente.",
+    soap_assessment:
+      "Buena asimilación de técnicas de reestructuración cognitiva (TCC). Disminución notable de la conducta de evitación experiencial ante figuras de autoridad laboral.",
+    soap_plan:
+      "Consolidar asertividad mediante ensayo conductual. Mantener autorregistro ABC ante situaciones ansiógenas y practicar respiración diafragmática 10 min diarios.",
     private_notes:
       "NOTA PRIVADA / CONFIDENCIAL: Paciente verbaliza culpa excesiva vinculada a expectativas parentales exigentes. Mantener foco en aceptación incondicional y separación de valía personal respecto a productividad.",
     homework: "Completar autorregistro ABC de 3 situaciones ansiógenas esta semana.",
@@ -244,6 +253,14 @@ export const INITIAL_SESSIONS: Session[] = [
     emotional_score: 5,
     session_summary:
       "Trabajo en torno a la pérdida del padre. Se realizó ejercicio de la 'Brújula de Valores' de ACT enfocado en área de relaciones familiares y trascendencia vital.",
+    soap_subjective:
+      "Paciente reporta tristeza moderada persistente y dificultad para concentrarse en su jornada. Manifiesta temor a olvidar los momentos compartidos con su padre.",
+    soap_objective:
+      "Facie compungida, pausas prolongadas al hablar de la pérdida, llanto silente en la mitad de la sesión. Responde adecuadamente a la contención empática.",
+    soap_assessment:
+      "Duelo no complicado en curso. Apertura a trabajar aceptación y defusión cognitiva según principios de ACT. Vínculo terapéutico sólido y colaborativo.",
+    soap_plan:
+      "Ejercicio de la carta no enviada para facilitar elaboración del duelo. Revisión de red de apoyo social en próxima sesión.",
     private_notes:
       "NOTA PRIVADA / CONFIDENCIAL: Llanto contenido. Muestra resistencia inicial a contactar con la tristeza pero tolera la experiencia guiada. Buena alianza terapéutica en consolidación.",
     homework: "Escribir una carta no enviada dirigida al padre expresando lo no dicho.",
@@ -258,6 +275,14 @@ export const INITIAL_SESSIONS: Session[] = [
     emotional_score: 6,
     session_summary:
       "Primera sesión de pareja. Se establecieron las reglas de encuadre relacional: escucha activa sin interrupción y confidencialidad compartida. Ambos miembros expresan disposición a la terapia.",
+    soap_subjective:
+      "Ambos miembros de la pareja expresan desgaste en la comunicación cotidiana y desacuerdos en la crianza de los hijos.",
+    soap_objective:
+      "Tensión postural inicial, interrupciones mutuas observadas en los primeros 15 minutos que disminuyen tras intervención del terapeuta en encuadre.",
+    soap_assessment:
+      "Patrón de demanda-retraimiento típico en parejas con escalada simétrica. Ambos conservan motivación hacia la continuidad de la relación.",
+    soap_plan:
+      "Implementar protocolo de tiempo fuera ('time-out') de 20 minutos ante discusiones acaloradas en casa. Sesión individual con cada uno la próxima semana.",
     private_notes:
       "NOTA PRIVADA / CONFIDENCIAL: Alta simetría en la escalada. Gonzalo tiende al retraimiento ('stonewalling') ante críticas percibidas. Valeria responde con hiperactivación verbal.",
     homework: "Implementar pausa acordada ('Time-Out') de 20 minutos si una discusión sube de tono.",
@@ -268,42 +293,54 @@ export const INITIAL_SESSIONS: Session[] = [
 export const INITIAL_FILES: PatientFile[] = [
   {
     id: "file-1",
+    organization_id: "org-demo-001",
     patient_id: "pat-1",
     file_name: "Evaluacion_Inicial_BAI_Ansiedad.pdf",
     category: "Evaluación Psicométrica",
+    file_category: "evaluation",
     file_type: "application/pdf",
     file_size: "1.4 MB",
     storage_path: "patient-files/pat-1/bai_ansiedad.pdf",
+    shared_with_patient: true,
     created_at: "2026-09-24T14:30:00.000Z",
   },
   {
     id: "file-2",
+    organization_id: "org-demo-001",
     patient_id: "pat-1",
     file_name: "Consentimiento_Informado_Terapia_Adultos.pdf",
     category: "Consentimiento Informado",
+    file_category: "consent",
     file_type: "application/pdf",
     file_size: "850 KB",
     storage_path: "patient-files/pat-1/consentimiento.pdf",
+    shared_with_patient: true,
     created_at: "2026-09-24T14:35:00.000Z",
   },
   {
     id: "file-3",
+    organization_id: "org-demo-001",
     patient_id: "pat-2",
     file_name: "Inventario_Depresion_Beck_BDI_II.pdf",
     category: "Evaluación Psicométrica",
+    file_category: "evaluation",
     file_type: "application/pdf",
     file_size: "1.1 MB",
     storage_path: "patient-files/pat-2/bdi_ii.pdf",
+    shared_with_patient: false,
     created_at: "2026-09-25T11:00:00.000Z",
   },
   {
     id: "file-4",
+    organization_id: "org-demo-001",
     patient_id: "pat-3",
     file_name: "Cuestionario_Satisfaccion_Marital_Dyadic.pdf",
     category: "Informe Clínico",
+    file_category: "report",
     file_type: "application/pdf",
     file_size: "2.3 MB",
     storage_path: "patient-files/pat-3/satisfaccion_marital.pdf",
+    shared_with_patient: false,
     created_at: "2026-09-26T16:20:00.000Z",
   },
 ];

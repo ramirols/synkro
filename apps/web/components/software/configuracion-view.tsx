@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useClinicalData } from "@/lib/clinical-context";
+import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
 import { supabase } from "@/lib/supabase";
 import {
   Settings,
@@ -21,7 +22,9 @@ import {
   ShieldAlert,
   Save,
   CheckCircle2,
+  HelpCircle,
 } from "lucide-react";
+import { useGuidedTour } from "@/components/software/guided-tour";
 
 function ConfiguracionContent() {
   const { user, refreshProfile } = useAuth();
@@ -49,7 +52,8 @@ function ConfiguracionContent() {
   const [clinicName, setClinicName] = useState("Centro Psicológico Synkro");
   const [clinicSlug, setClinicSlug] = useState("synkro-mind-clinic");
 
-  const isSuperAdmin = user?.role === "superadmin" || user?.role === "admin";
+  const isSuperAdmin = user?.platform_role === "superadmin";
+  const { startTour } = useGuidedTour();
 
   useEffect(() => {
     async function loadData() {
@@ -92,12 +96,7 @@ function ConfiguracionContent() {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isDemo) {
-      setSaving(true);
-      setTimeout(() => {
-        setSaving(false);
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
-      }, 300);
+      notifyDemoWriteBlocked("Actualizar Configuración Clínica");
       return;
     }
 
@@ -153,22 +152,33 @@ function ConfiguracionContent() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              {isSuperAdmin && activeTab === "admin"
+                ? "Consola Administrador Velyon"
+                : "Mi Perfil & Configuración"}
+            </h1>
+            <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-primary">
+              {isSuperAdmin ? "Superadmin" : "Psicólogo Titular"}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
             {isSuperAdmin && activeTab === "admin"
-              ? "Consola Administrador Velyon"
-              : "Mi Perfil & Configuración"}
-          </h1>
-          <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-primary">
-            {isSuperAdmin ? "Superadmin" : "Psicólogo Titular"}
-          </span>
+              ? "Herramientas de plataforma, base de datos e infraestructura Cloud para Velyon."
+              : "Gestiona tus credenciales profesionales, datos de consultorio y accesos de pacientes."}
+          </p>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {isSuperAdmin && activeTab === "admin"
-            ? "Herramientas de plataforma, base de datos e infraestructura Cloud para Velyon."
-            : "Gestiona tus credenciales profesionales, datos de consultorio y accesos de pacientes."}
-        </p>
+
+        <button
+          type="button"
+          onClick={startTour}
+          className="inline-flex items-center gap-2 self-start rounded-xl border border-input bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors shadow-2xs cursor-pointer"
+        >
+          <Sparkles size={14} className="text-primary" />
+          <span>Repetir Tour Guiado</span>
+        </button>
       </div>
 
       {/* Navigation Tabs */}

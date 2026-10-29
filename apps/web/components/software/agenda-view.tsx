@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useClinicalData } from "@/lib/clinical-context";
+import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
 import {
   CalendarDays,
   Plus,
@@ -29,6 +30,8 @@ import {
   Phone,
   ArrowUpRight,
   Printer,
+  Lightbulb,
+  Building2,
 } from "lucide-react";
 
 export default function AgendaView() {
@@ -138,6 +141,10 @@ export default function AgendaView() {
   }, []);
 
   const handleOpenNewAppointment = (date?: string, time?: string) => {
+    if (isDemo) {
+      notifyDemoWriteBlocked("Agendar Nueva Cita");
+      return;
+    }
     if (date) setAppointmentDate(date);
     if (time) setStartTime(time);
     setIsModalOpen(true);
@@ -185,6 +192,10 @@ export default function AgendaView() {
   };
 
   const handleUpdateStatus = async (appId: string, newStatus: string) => {
+    if (isDemo) {
+      notifyDemoWriteBlocked(newStatus === "completed" ? "Completar Cita" : "Cancelar Cita");
+      return;
+    }
     try {
       await service.updateAppointmentStatus(appId, newStatus);
       if (selectedAppointment && selectedAppointment.id === appId) {
@@ -369,15 +380,15 @@ export default function AgendaView() {
 
         {!bannerCollapsed && (
           <div className="mt-2.5 pt-2.5 border-t border-amber-500/20 text-[11px] leading-relaxed flex flex-wrap items-center justify-between gap-2">
-            <span>
-              💡 <strong>Organización Clínica:</strong> Haz clic en cualquier casilla de hora para agendar una cita directa. Al hacer clic en una cita existente podrás iniciar el Google Meet o escribir la Nota SOAP con 1 clic.
+            <span className="inline-flex items-center gap-1.5">
+              <Lightbulb size={13} className="text-amber-600 shrink-0 inline" /> <strong>Organización Clínica:</strong> Haz clic en cualquier casilla de hora para agendar una cita directa. Al hacer clic en una cita existente podrás iniciar el Google Meet o escribir la Nota SOAP con 1 clic.
             </span>
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-md bg-card/80 px-2 py-0.5 font-semibold text-foreground border border-border">
-                🏢 Box 1: Disponible
+                <Building2 size={12} className="inline text-muted-foreground" /> Box 1: Disponible
               </span>
               <span className="inline-flex items-center gap-1 rounded-md bg-card/80 px-2 py-0.5 font-semibold text-foreground border border-border">
-                🏢 Box 2: Disponible
+                <Building2 size={12} className="inline text-muted-foreground" /> Box 2: Disponible
               </span>
             </div>
           </div>
@@ -415,8 +426,8 @@ export default function AgendaView() {
             className="rounded-lg border bg-background px-2.5 py-1 text-xs font-medium outline-none"
           >
             <option value="todos">Presencial & Virtual</option>
-            <option value="presencial">🏢 Solo Presencial (Box)</option>
-            <option value="virtual">💻 Solo Telepsicología</option>
+            <option value="presencial">Solo Presencial (Box)</option>
+            <option value="virtual">Solo Telepsicología</option>
           </select>
         </div>
       </div>
@@ -514,23 +525,37 @@ export default function AgendaView() {
 
                                     <div className="mt-1.5 flex items-center justify-between text-[9px] font-semibold">
                                       <span
-                                        className={`rounded-md px-1.5 py-0.5 ${
+                                        className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 ${
                                           app.modality === "virtual"
                                             ? "bg-sky-500/20 text-sky-700 dark:text-sky-300"
                                             : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
                                         }`}
                                       >
-                                        {app.modality === "virtual" ? "💻 Meet" : "🏢 Box 1"}
+                                        {app.modality === "virtual" ? (
+                                          <>
+                                            <Video size={10} /> Meet
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Building2 size={10} /> Box 1
+                                          </>
+                                        )}
                                       </span>
 
                                       <span
-                                        className={`capitalize ${
+                                        className={`inline-flex items-center capitalize ${
                                           app.status === "completed"
                                             ? "text-emerald-600"
                                             : "text-amber-600"
                                         }`}
                                       >
-                                        {app.status === "completed" ? "✓ Hecha" : "Agendada"}
+                                        {app.status === "completed" ? (
+                                          <>
+                                            <CheckCircle2 size={10} className="mr-0.5" /> Hecha
+                                          </>
+                                        ) : (
+                                          "Agendada"
+                                        )}
                                       </span>
                                     </div>
                                   </div>
@@ -601,8 +626,8 @@ export default function AgendaView() {
                           <Video size={11} /> Telepsicología (Virtual)
                         </span>
                       ) : (
-                        <span className="rounded-md bg-secondary px-2 py-0.5 text-[10px] font-semibold text-primary">
-                          🏢 Presencial en Consultorio
+                        <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-[10px] font-semibold text-primary">
+                          <Building2 size={11} /> Presencial en Consultorio
                         </span>
                       )}
 
@@ -693,15 +718,21 @@ export default function AgendaView() {
             <div className="flex items-start justify-between border-b pb-4">
               <div>
                 <span
-                  className={`rounded-md px-2.5 py-0.5 text-[11px] font-bold ${
+                  className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-[11px] font-bold ${
                     selectedAppointment.modality === "virtual"
                       ? "bg-sky-500/10 text-sky-600"
                       : "bg-emerald-500/10 text-emerald-600"
                   }`}
                 >
-                  {selectedAppointment.modality === "virtual"
-                    ? "💻 Telepsicología (Virtual)"
-                    : "🏢 Presencial en Consultorio"}
+                  {selectedAppointment.modality === "virtual" ? (
+                    <>
+                      <Video size={12} /> Telepsicología (Virtual)
+                    </>
+                  ) : (
+                    <>
+                      <Building2 size={12} /> Presencial en Consultorio
+                    </>
+                  )}
                 </span>
                 <h2 className="mt-2 text-xl font-bold text-foreground">
                   {selectedAppointment.patients?.first_name}{" "}
@@ -910,24 +941,24 @@ export default function AgendaView() {
                   <button
                     type="button"
                     onClick={() => setModality("presencial")}
-                    className={`rounded-xl border p-2.5 text-xs font-semibold transition-all ${
+                    className={`inline-flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-semibold transition-all ${
                       modality === "presencial"
                         ? "border-primary bg-secondary text-primary"
                         : "border-input bg-card text-muted-foreground"
                     }`}
                   >
-                    🏢 Presencial en Consultorio
+                    <Building2 size={13} /> Presencial en Consultorio
                   </button>
                   <button
                     type="button"
                     onClick={() => setModality("virtual")}
-                    className={`rounded-xl border p-2.5 text-xs font-semibold transition-all ${
+                    className={`inline-flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-semibold transition-all ${
                       modality === "virtual"
                         ? "border-primary bg-secondary text-primary"
                         : "border-input bg-card text-muted-foreground"
                     }`}
                   >
-                    💻 Telepsicología (Virtual)
+                    <Video size={13} /> Telepsicología (Virtual)
                   </button>
                 </div>
               </div>

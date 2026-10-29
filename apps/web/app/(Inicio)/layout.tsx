@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 
+import PublicHeader from "@/components/inicio/public-header";
+import PublicFooter from "@/components/inicio/public-footer";
+
 export const metadata: Metadata = {
   title: {
     default: "Synkro | Software de Gestión Clínica para Psicólogos y Centros en Perú",
@@ -119,11 +122,13 @@ export default function PublicLayout({
 }) {
   return (
     <>
+    <PublicHeader />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       {children}
+      <PublicFooter />
     </>
   );
 }

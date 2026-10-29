@@ -1,7 +1,9 @@
 import { Link } from "next-view-transitions";
-import { Check, ArrowRight, MessageCircle, Smartphone, CreditCard, ShieldCheck } from "lucide-react";
+import { Check, ArrowRight, MessageCircle, Smartphone, CreditCard, ShieldCheck, Landmark } from "lucide-react";
 import PublicHeader from "@/components/inicio/public-header";
 import PublicFooter from "@/components/inicio/public-footer";
+import { PLANS_CONFIG } from "@/lib/config/plans";
+import { COMMERCIAL_CONFIG, getCommercialWhatsAppLink } from "@/lib/config/commercial";
 
 export const metadata = {
   title: "Precios y Planes con Yape y Tarjetas | Synkro",
@@ -20,29 +22,23 @@ export const metadata = {
 };
 
 export default function PreciosPage() {
-  const whatsappBaseUrl = "https://wa.me/51997676432";
-
-  const getWhatsappPlanLink = (planName: string, price: string) => {
-    const text = encodeURIComponent(
-      `¡Hola Velyon! Me interesa activar el ${planName} (${price}) de Synkro para mi práctica psicológica. ¿Me pueden enviar los datos para pagar por Yape / Tarjeta y configurar mi clínica?`
-    );
-    return `${whatsappBaseUrl}?text=${text}`;
-  };
+  const starter = PLANS_CONFIG.starter;
+  const professional = PLANS_CONFIG.professional;
+  const clinic = PLANS_CONFIG.clinic;
 
   return (
     <>
-      <PublicHeader />
       <main className="min-h-screen bg-background py-20 px-6">
         <div className="mx-auto max-w-5xl space-y-16">
           <div className="text-center space-y-4">
             <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-primary">
-              Planes Transparentes & Pagos Locales
+              Prueba Gratuita de {COMMERCIAL_CONFIG.trialDurationDays} Días & Pagos Locales
             </span>
             <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">
               Invierte en orden, tranquilidad y tiempo clínico.
             </h1>
             <p className="mx-auto max-w-xl text-sm text-muted-foreground leading-relaxed">
-              Sin comisiones ocultas ni contratos forzosos. La activación y pago se coordina directamente por WhatsApp mediante Yape, Plin o Tarjeta.
+              Todos los planes incluyen 14 días de prueba sin compromiso. La activación y renovación se coordina de manera directa por WhatsApp mediante Yape, Plin o Transferencia.
             </p>
           </div>
 
@@ -52,40 +48,36 @@ export default function PreciosPage() {
               <div className="space-y-4">
                 <div>
                   <span className="rounded-md bg-secondary px-2.5 py-0.5 text-[11px] font-bold text-primary">
-                    Práctica Inicial
+                    {starter.badge}
                   </span>
-                  <h3 className="mt-2 text-xl font-bold text-foreground">Starter</h3>
+                  <h3 className="mt-2 text-xl font-bold text-foreground">{starter.name}</h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Para psicólogos independientes que están iniciando su consulta privada.
+                    {starter.tagline}
                   </p>
                 </div>
 
                 <div className="flex items-baseline gap-1 border-b pb-4">
-                  <span className="text-4xl font-black tracking-tight text-foreground">S/ 49</span>
-                  <span className="text-xs text-muted-foreground font-semibold">/ mes (PEN)</span>
+                  <span className="text-4xl font-black tracking-tight text-foreground">
+                    {starter.currencySymbol} {starter.priceMonthly}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-semibold">{starter.billingPeriodLabel}</span>
                 </div>
 
                 <ul className="space-y-2.5 text-xs text-muted-foreground">
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Hasta 20 pacientes activos
-                  </li>
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Horario semanal visual y agenda
-                  </li>
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Fichas clínicas e historial digital
-                  </li>
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Notas de sesión estructuradas
-                  </li>
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Portal del paciente incluido
-                  </li>
+                  {starter.features.map((feat, i) => (
+                    <li key={i} className="flex items-center gap-2 text-foreground font-medium">
+                      <Check size={14} className="text-primary shrink-0" /> {feat}
+                    </li>
+                  ))}
                 </ul>
               </div>
 
               <a
-                href={getWhatsappPlanLink("Plan Starter", "S/ 49/mes")}
+                href={getCommercialWhatsAppLink({
+                  intent: "plan_hire",
+                  planName: starter.name,
+                  price: `${starter.currencySymbol} ${starter.priceMonthly}/mes`,
+                })}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center justify-center gap-2 rounded-2xl border border-input bg-card py-3 text-xs font-bold text-foreground hover:bg-muted transition-colors shadow-2xs"
@@ -104,43 +96,36 @@ export default function PreciosPage() {
               <div className="space-y-4">
                 <div>
                   <span className="rounded-md bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary">
-                    Práctica Consolidada
+                    {professional.badge}
                   </span>
-                  <h3 className="mt-2 text-xl font-bold text-foreground">Professional</h3>
+                  <h3 className="mt-2 text-xl font-bold text-foreground">{professional.name}</h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Para terapeutas consolidados que buscan automatizar notas y escalar su consulta.
+                    {professional.tagline}
                   </p>
                 </div>
 
                 <div className="flex items-baseline gap-1 border-b pb-4">
-                  <span className="text-4xl font-black tracking-tight text-foreground">S/ 89</span>
-                  <span className="text-xs text-muted-foreground font-semibold">/ mes (PEN)</span>
+                  <span className="text-4xl font-black tracking-tight text-foreground">
+                    {professional.currencySymbol} {professional.priceMonthly}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-semibold">{professional.billingPeriodLabel}</span>
                 </div>
 
                 <ul className="space-y-2.5 text-xs text-muted-foreground">
-                  <li className="flex items-center gap-2 text-foreground font-bold">
-                    <Check size={14} className="text-primary shrink-0" /> Pacientes Ilimitados
-                  </li>
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Notas SOAP con Inteligencia Artificial
-                  </li>
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Doble capa de notas privadas del terapeuta
-                  </li>
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Bóveda de archivos con visor in-app
-                  </li>
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Telepsicología con Google Meet integrado
-                  </li>
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Soporte prioritario por WhatsApp directo
-                  </li>
+                  {professional.features.map((feat, i) => (
+                    <li key={i} className="flex items-center gap-2 text-foreground font-medium">
+                      <Check size={14} className="text-primary shrink-0" /> {feat}
+                    </li>
+                  ))}
                 </ul>
               </div>
 
               <a
-                href={getWhatsappPlanLink("Plan Professional", "S/ 89/mes")}
+                href={getCommercialWhatsAppLink({
+                  intent: "plan_hire",
+                  planName: professional.name,
+                  price: `${professional.currencySymbol} ${professional.priceMonthly}/mes`,
+                })}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-xs font-bold text-primary-foreground shadow-md hover:opacity-90 transition-opacity"
@@ -155,40 +140,36 @@ export default function PreciosPage() {
               <div className="space-y-4">
                 <div>
                   <span className="rounded-md bg-secondary px-2.5 py-0.5 text-[11px] font-bold text-primary">
-                    Centros & Policlínicos
+                    {clinic.badge}
                   </span>
-                  <h3 className="mt-2 text-xl font-bold text-foreground">Clínica / Empresa</h3>
+                  <h3 className="mt-2 text-xl font-bold text-foreground">{clinic.name}</h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Para centros de psicología, consultorios asociados y equipos multidisciplinarios.
+                    {clinic.tagline}
                   </p>
                 </div>
 
                 <div className="flex items-baseline gap-1 border-b pb-4">
-                  <span className="text-4xl font-black tracking-tight text-foreground">S/ 189</span>
-                  <span className="text-xs text-muted-foreground font-semibold">/ mes (PEN)</span>
+                  <span className="text-4xl font-black tracking-tight text-foreground">
+                    {clinic.currencySymbol} {clinic.priceMonthly}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-semibold">{clinic.billingPeriodLabel}</span>
                 </div>
 
                 <ul className="space-y-2.5 text-xs text-muted-foreground">
-                  <li className="flex items-center gap-2 text-foreground font-bold">
-                    <Check size={14} className="text-primary shrink-0" /> Múltiples psicólogos y terapeutas
-                  </li>
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Sistema de derivaciones y triage interno
-                  </li>
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Gestión de consultorios físicos (Boxes)
-                  </li>
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Comité de supervisión y visado ético
-                  </li>
-                  <li className="flex items-center gap-2 text-foreground font-medium">
-                    <Check size={14} className="text-primary shrink-0" /> Métricas de rendimiento de la clínica
-                  </li>
+                  {clinic.features.map((feat, i) => (
+                    <li key={i} className="flex items-center gap-2 text-foreground font-medium">
+                      <Check size={14} className="text-primary shrink-0" /> {feat}
+                    </li>
+                  ))}
                 </ul>
               </div>
 
               <a
-                href={getWhatsappPlanLink("Plan Clínica / Empresa", "S/ 189/mes")}
+                href={getCommercialWhatsAppLink({
+                  intent: "plan_hire",
+                  planName: clinic.name,
+                  price: `${clinic.currencySymbol} ${clinic.priceMonthly}/mes`,
+                })}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center justify-center gap-2 rounded-2xl border border-input bg-card py-3 text-xs font-bold text-foreground hover:bg-muted transition-colors shadow-2xs"
@@ -213,28 +194,31 @@ export default function PreciosPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-xl border bg-card px-3 py-1 text-xs font-bold text-purple-700 dark:text-purple-300">
-                  📱 Yape
+                <span className="inline-flex items-center gap-1.5 rounded-xl border bg-card px-3 py-1 text-xs font-bold text-purple-700 dark:text-purple-300">
+                  <Smartphone size={13} className="text-purple-600" />
+                  <span>Yape ({COMMERCIAL_CONFIG.yape.number})</span>
                 </span>
-                <span className="rounded-xl border bg-card px-3 py-1 text-xs font-bold text-cyan-700 dark:text-cyan-300">
-                  📱 Plin
+                <span className="inline-flex items-center gap-1.5 rounded-xl border bg-card px-3 py-1 text-xs font-bold text-cyan-700 dark:text-cyan-300">
+                  <Smartphone size={13} className="text-cyan-600" />
+                  <span>Plin</span>
                 </span>
-                <span className="rounded-xl border bg-card px-3 py-1 text-xs font-bold text-blue-700 dark:text-blue-300">
-                  💳 Visa / Mastercard
+                <span className="inline-flex items-center gap-1.5 rounded-xl border bg-card px-3 py-1 text-xs font-bold text-blue-700 dark:text-blue-300">
+                  <CreditCard size={13} className="text-blue-600" />
+                  <span>Visa / Mastercard</span>
                 </span>
-                <span className="rounded-xl border bg-card px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-300">
-                  🏦 BCP / BBVA
+                <span className="inline-flex items-center gap-1.5 rounded-xl border bg-card px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-300">
+                  <Landmark size={13} className="text-amber-600" />
+                  <span>BCP / BBVA</span>
                 </span>
               </div>
             </div>
 
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Para garantizar que tu consultorio o clínica quede configurado a medida con tu número de colegiatura (C.Ps.P.), logotipo y datos profesionales, la activación se coordina de manera directa por WhatsApp. Te compartimos el código QR de Yape o el link de pago y tendrás tu software listo en menos de 5 minutos.
+              Para garantizar que tu consultorio o clínica quede configurado a medida con tu número de colegiatura (C.Ps.P.), logotipo y datos profesionales, la activación se coordina de manera directa por WhatsApp al <strong className="text-foreground">{COMMERCIAL_CONFIG.phoneFormatted}</strong>. Te compartimos el código QR de Yape o los datos de transferencia y tendrás tu software listo en minutos.
             </p>
           </div>
         </div>
       </main>
-      <PublicFooter />
     </>
   );
 }

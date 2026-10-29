@@ -34,11 +34,13 @@ export default function LoginPage() {
     try {
       setLoading(true);
       setErrorMsg("");
-      await login(email, password);
+      const loggedUser = await login(email, password);
 
-      // Check role if admin
-      if (email.toLowerCase().includes("admin")) {
+      // Redirección basada estrictamente en el rol verificado en base de datos
+      if (loggedUser?.platform_role === "superadmin") {
         router.push("/admin");
+      } else if (loggedUser?.role === "patient") {
+        router.push("/portal-paciente");
       } else {
         router.push("/dashboard");
       }
@@ -159,9 +161,17 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Contraseña
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-foreground">
+                  Contraseña
+                </label>
+                <Link
+                  href="/recuperar-contrasena"
+                  className="text-[11px] font-semibold text-primary hover:underline"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input

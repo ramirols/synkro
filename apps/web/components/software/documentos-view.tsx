@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PatientFile, Patient } from "@/lib/types/clinical";
 import { useClinicalData } from "@/lib/clinical-context";
+import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
 import {
   FileText,
   Plus,
@@ -20,12 +21,24 @@ import {
   CheckCircle2,
   Printer,
   Sparkles,
+  Lock,
+  Share2,
+  ExternalLink,
+  Trash2,
 } from "lucide-react";
+
+const CATEGORY_MAP: Record<string, { label: string; key: "evaluation" | "consent" | "report" | "prescription" | "other" }> = {
+  "Evaluación Psicométrica": { label: "Evaluación Psicométrica", key: "evaluation" },
+  "Consentimiento Informado": { label: "Consentimiento Informado", key: "consent" },
+  "Informe Clínico": { label: "Informe Clínico", key: "report" },
+  "Receta / Indicaciones": { label: "Receta / Indicaciones", key: "prescription" },
+  "Otro Documento": { label: "Otro Documento", key: "other" },
+};
 
 export default function DocumentosView() {
   const { service, basePath, isDemo } = useClinicalData();
-  const [files, setFiles] = useState<any[]>([]);
-  const [patients, setPatients] = useState<any[]>([]);
+  const [files, setFiles] = useState<PatientFile[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [searchQuery, setSearchQuery] = useState("");
@@ -34,7 +47,9 @@ export default function DocumentosView() {
   const [errorMsg, setErrorMsg] = useState("");
 
   // Viewer State
-  const [viewingDoc, setViewingDoc] = useState<any | null>(null);
+  const [viewingDoc, setViewingDoc] = useState<PatientFile | null>(null);
+  const [signedUrlLoading, setSignedUrlLoading] = useState(false);
+  const [signedUrlError, setSignedUrlError] = useState("");
 
   // Drag and Drop state
   const [isDragging, setIsDragging] = useState(false);
@@ -43,7 +58,8 @@ export default function DocumentosView() {
   // Form State
   const [patientId, setPatientId] = useState("");
   const [fileName, setFileName] = useState("");
-  const [category, setCategory] = useState("Evaluación Psicométrica");
+  const [categoryLabel, setCategoryLabel] = useState("Evaluación Psicométrica");
+  const [sharedWithPatient, setSharedWithPatient] = useState(false);
   const [fileType, setFileType] = useState("application/pdf");
 
   const loadData = async () => {
@@ -82,27 +98,55 @@ export default function DocumentosView() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+    if (isDemo) {
+      notifyDemoWriteBlocked("Subir Documento Clínico a la Bóveda");
+      return;
+    }
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
       setDraggedFile(file);
       setFileName(file.name);
+      setFileType(file.type || "application/pdf");
       setIsModalOpen(true);
     }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isDemo) {
+      notifyDemoWriteBlocked("Subir Documento Clínico a la Bóveda");
+      return;
+    }
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       setDraggedFile(file);
       setFileName(file.name);
+      setFileType(file.type || "application/pdf");
       setIsModalOpen(true);
+    }
+  };
+
+  const handleOpenDocViewer = async (doc: PatientFile) => {
+    setViewingDoc(doc);
+    setSignedUrlError("");
+
+    if (service.getFileSignedUrl && doc.storage_path) {
+      try {
+        setSignedUrlLoading(true);
+        const url = await service.getFileSignedUrl(doc.storage_path);
+        setViewingDoc({ ...doc, signed_url: url });
+      } catch (err: any) {
+        console.warn("No se pudo generar signed URL para visor directo:", err.message);
+        setSignedUrlError("Documento con almacenamiento simulado o protegido.");
+      } finally {
+        setSignedUrlLoading(false);
+      }
     }
   };
 
   const handleCreateDocument = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!patientId || !fileName.trim()) {
-      setErrorMsg("Completa los datos del documento.");
+      setErrorMsg("Completa los datos del paciente y nombre de archivo.");
       return;
     }
 
@@ -110,21 +154,40 @@ export default function DocumentosView() {
       setSaving(true);
       setErrorMsg("");
 
-      const fileSizeFormatted = draggedFile
-        ? `${(draggedFile.size / (1024 * 1024)).toFixed(1)} MB`
-        : "1.2 MB";
+      const categoryObj = CATEGORY_MAP[categoryLabel] || {
+        label: "Otro Documento",
+        key: "other",
+      };
 
-      await service.createFile({
-        patient_id: patientId,
-        file_name: fileName.trim(),
-        storage_path: `patient-files/${patientId}/${Date.now()}_${fileName.trim()}`,
-        file_type: fileType,
-        category: category,
-        file_size: fileSizeFormatted,
-      });
+      if (draggedFile && service.uploadFile) {
+        // Subida real a Supabase Storage con políticas de privacidad
+        await service.uploadFile(
+          draggedFile,
+          patientId,
+          categoryObj.key,
+          sharedWithPatient
+        );
+      } else {
+        // Registro de metadatos o demo
+        const fileSizeFormatted = draggedFile
+          ? `${(draggedFile.size / (1024 * 1024)).toFixed(1)} MB`
+          : "1.2 MB";
+
+        await service.createFile({
+          patient_id: patientId,
+          file_name: fileName.trim(),
+          storage_path: `patient-files/${patientId}/${Date.now()}_${fileName.trim()}`,
+          file_type: fileType,
+          category: categoryObj.label,
+          file_category: categoryObj.key,
+          file_size: fileSizeFormatted,
+          shared_with_patient: sharedWithPatient,
+        });
+      }
 
       setFileName("");
       setDraggedFile(null);
+      setSharedWithPatient(false);
       setIsModalOpen(false);
       await loadData();
     } catch (err: any) {
@@ -137,7 +200,9 @@ export default function DocumentosView() {
 
   const filteredFiles = files.filter((f) => {
     const matchesCat =
-      selectedCategory === "todos" ? true : f.category === selectedCategory;
+      selectedCategory === "todos"
+        ? true
+        : f.file_category === selectedCategory || f.category === selectedCategory;
 
     const query = searchQuery.toLowerCase();
     const matchesSearch =
@@ -157,20 +222,26 @@ export default function DocumentosView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Bóveda de Documentos Clínicos
+              Bóveda Documental Clínica
             </h1>
             <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-primary">
               {files.length} Archivos
             </span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Consentimientos informados, pruebas psicométricas (Beck, STAI) e informes psicológicos con visor web.
+            Almacenamiento privado para consentimientos informados, pruebas psicométricas y reportes con URLs firmadas (1h de vigencia).
           </p>
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs hover:opacity-90 transition-opacity"
+          onClick={() => {
+            if (isDemo) {
+              notifyDemoWriteBlocked("Subir Documento Clínico a la Bóveda");
+              return;
+            }
+            setIsModalOpen(true);
+          }}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs hover:opacity-90 transition-opacity cursor-pointer"
         >
           <Plus size={16} />
           <span>Subir Documento</span>
@@ -195,7 +266,7 @@ export default function DocumentosView() {
           Arrastra y suelta aquí el documento o informe psicológico
         </h3>
         <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-          Soporta archivos PDF de evaluaciones psicométricas, consentimientos informados o historiales médicos (hasta 25 MB).
+          Archivos PDF, imágenes o documentos Word de evaluaciones psicométricas y consentimientos (hasta 15 MB).
         </p>
 
         <label className="mt-4 inline-flex items-center gap-2 rounded-xl bg-secondary px-4 py-2 text-xs font-semibold text-primary cursor-pointer hover:bg-primary hover:text-white transition-colors">
@@ -228,18 +299,19 @@ export default function DocumentosView() {
           className="h-10 rounded-xl border bg-background px-3 text-xs font-medium text-foreground outline-none"
         >
           <option value="todos">Todas las Categorías</option>
-          <option value="Evaluación Psicométrica">Evaluación Psicométrica</option>
-          <option value="Consentimiento Informado">Consentimiento Informado</option>
-          <option value="Informe Clínico">Informe Clínico</option>
-          <option value="Contrato Terapéutico">Contrato Terapéutico</option>
+          <option value="evaluation">Evaluación Psicométrica</option>
+          <option value="consent">Consentimiento Informado</option>
+          <option value="report">Informe Clínico</option>
+          <option value="prescription">Receta / Indicaciones</option>
+          <option value="other">Otro Documento</option>
         </select>
       </div>
 
-      {/* Files Grid with Integrated Web Viewer Button */}
+      {/* Files Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {loading ? (
           <div className="col-span-full rounded-2xl border bg-card p-12 text-center text-sm text-muted-foreground">
-            Cargando expedientes y documentos...
+            Cargando expedientes y documentos de la bóveda...
           </div>
         ) : filteredFiles.length === 0 ? (
           <div className="col-span-full rounded-2xl border bg-card p-12 text-center">
@@ -248,7 +320,7 @@ export default function DocumentosView() {
               No hay documentos que coincidan
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Prueba con otro término de búsqueda o registra un documento.
+              Prueba con otro término de búsqueda o sube un documento.
             </p>
           </div>
         ) : (
@@ -262,9 +334,20 @@ export default function DocumentosView() {
                   <div className="flex size-10 items-center justify-center rounded-xl bg-secondary text-primary">
                     <FileCheck size={20} />
                   </div>
-                  <span className="rounded-md bg-secondary px-2 py-0.5 text-[10px] font-semibold text-primary">
-                    {f.category || "Documento"}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="rounded-md bg-secondary px-2 py-0.5 text-[10px] font-semibold text-primary">
+                      {f.category || f.file_category || "Documento"}
+                    </span>
+                    {f.shared_with_patient ? (
+                      <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                        <CheckCircle2 size={10} /> Compartido
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground flex items-center gap-1">
+                        <Lock size={10} /> Solo Clínica
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <h3 className="mt-4 text-sm font-bold text-foreground line-clamp-2">
@@ -274,7 +357,7 @@ export default function DocumentosView() {
                 <p className="mt-2 text-xs text-muted-foreground">
                   Paciente:{" "}
                   <Link
-                    href={`/pacientes/${f.patient_id}`}
+                    href={`${basePath}/pacientes/${f.patient_id}`}
                     className="font-semibold text-foreground hover:text-primary transition-colors"
                   >
                     {f.patients?.first_name} {f.patients?.last_name}
@@ -283,13 +366,13 @@ export default function DocumentosView() {
               </div>
 
               <div className="mt-6 flex items-center justify-between border-t pt-3 text-xs">
-                <span className="text-muted-foreground">{f.file_size || "PDF"}</span>
+                <span className="text-muted-foreground">{f.file_size || "1.2 MB"}</span>
                 <button
-                  onClick={() => setViewingDoc(f)}
+                  onClick={() => handleOpenDocViewer(f)}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
                 >
                   <Eye size={13} />
-                  <span>Ver en Web</span>
+                  <span>Ver en Bóveda</span>
                 </button>
               </div>
             </div>
@@ -297,7 +380,7 @@ export default function DocumentosView() {
         )}
       </div>
 
-      {/* IN-APP DOCUMENT VIEWER MODAL (VISOR DE DOCUMENTO EN LA WEB) */}
+      {/* MODAL VISOR DE DOCUMENTO EN BÓVEDA CON URL FIRMADA */}
       {viewingDoc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="w-full max-w-3xl rounded-3xl border bg-card p-6 sm:p-8 shadow-2xl space-y-6 my-8">
@@ -306,11 +389,17 @@ export default function DocumentosView() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-                    {viewingDoc.category || "Documento Clínico"}
+                    {viewingDoc.category || viewingDoc.file_category || "Documento Clínico"}
                   </span>
-                  <span className="text-xs text-muted-foreground">
-                    Expediente Oficial Synkro
-                  </span>
+                  {viewingDoc.shared_with_patient ? (
+                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 size={12} /> Visible para el paciente
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                      <Lock size={12} /> Confidencial (Uso interno)
+                    </span>
+                  )}
                 </div>
                 <h2 className="text-xl font-bold tracking-tight text-foreground">
                   {viewingDoc.file_name}
@@ -320,7 +409,7 @@ export default function DocumentosView() {
                   <strong>
                     {viewingDoc.patients?.first_name} {viewingDoc.patients?.last_name}
                   </strong>{" "}
-                  • Terapeuta: Lic. Alejandro Mendoza V. (C.Ps.P. 28419)
+                  • Tamaño: {viewingDoc.file_size || "1.2 MB"}
                 </p>
               </div>
 
@@ -332,86 +421,69 @@ export default function DocumentosView() {
               </button>
             </div>
 
+            {/* Document Details / Signed Link Bar */}
+            {viewingDoc.signed_url && (
+              <div className="flex items-center justify-between rounded-2xl border border-primary/20 bg-secondary/30 p-4 text-xs">
+                <div className="space-y-0.5">
+                  <div className="font-bold text-primary flex items-center gap-1.5">
+                    <Shield size={14} /> Enlace Cifrado Temporal Generado (Válido por 1 hora)
+                  </div>
+                  <span className="text-[11px] text-muted-foreground">
+                    Acceso autenticado y firmado contra Supabase Storage.
+                  </span>
+                </div>
+                <a
+                  href={viewingDoc.signed_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 font-bold text-primary-foreground hover:opacity-90 shadow-xs"
+                >
+                  <ExternalLink size={13} />
+                  <span>Abrir Archivo Original</span>
+                </a>
+              </div>
+            )}
+
             {/* Simulated Clinical Document Sheet */}
             <div className="rounded-2xl border bg-background p-6 sm:p-8 shadow-inner space-y-6 text-xs text-foreground font-serif leading-relaxed">
               <div className="border-b pb-4 text-center space-y-1">
                 <span className="text-[10px] font-sans font-bold uppercase tracking-widest text-primary">
-                  CENTRO PSICOLÓGICO SYNKRO | VELYON CLINIC
+                  CENTRO PSICOLÓGICO SYNKRO | BÓVEDA CLÍNICA SEGURA
                 </span>
                 <h3 className="text-base font-sans font-bold text-foreground">
                   {viewingDoc.file_name.replace(".pdf", "").replace(/_/g, " ")}
                 </h3>
                 <p className="text-[11px] font-sans text-muted-foreground">
-                  Fecha de Emisión: 24 de Septiembre, 2026 • Registro Clínico Confidencial
+                  Fecha de Registro:{" "}
+                  {new Date(viewingDoc.created_at).toLocaleDateString("es-ES", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
                 </p>
               </div>
 
-              {/* Dynamic simulated content based on category */}
-              {viewingDoc.category?.includes("Consentimiento") ? (
-                <div className="space-y-4 font-sans text-xs text-muted-foreground">
+              {/* Dynamic simulated content */}
+              <div className="space-y-3 font-sans text-xs text-muted-foreground">
+                <p>
+                  <strong>Ruta en Bóveda:</strong>{" "}
+                  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground">
+                    {viewingDoc.storage_path}
+                  </code>
+                </p>
+                <p>
+                  <strong>Estado de Compartición:</strong>{" "}
+                  {viewingDoc.shared_with_patient
+                    ? "Disponible para descarga por el paciente en el portal web."
+                    : "Acceso exclusivo para el equipo terapéutico autorizado de la organización."}
+                </p>
+                <div className="rounded-xl border bg-muted/20 p-4 text-[11px] space-y-1">
+                  <div className="font-bold text-foreground">Garantía de Privacidad HIPAA / GDPR:</div>
                   <p>
-                    Por medio del presente documento, el/la paciente{" "}
-                    <strong className="text-foreground">
-                      {viewingDoc.patients?.first_name} {viewingDoc.patients?.last_name}
-                    </strong>{" "}
-                    manifiesta haber recibido información clara y detallada acerca del encuadre
-                    psicológico, la frecuencia de las sesiones y la política de confidencialidad
-                    respaldada por el Código de Ética del Colegio de Psicólogos del Perú (C.Ps.P.).
-                  </p>
-                  <p>
-                    Asimismo, autoriza el registro de evoluciones terapéuticas en la plataforma
-                    Synkro bajo estándares de cifrado médico.
-                  </p>
-                  <div className="pt-6 border-t flex justify-between items-end font-sans text-[11px] text-foreground">
-                    <div>
-                      <div className="h-0.5 w-36 bg-foreground mb-1" />
-                      <span>Firma del Paciente</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="h-0.5 w-36 bg-foreground mb-1 ml-auto" />
-                      <span>Lic. Alejandro Mendoza V.</span>
-                      <span className="block text-[10px] text-muted-foreground">C.Ps.P. 28419</span>
-                    </div>
-                  </div>
-                </div>
-              ) : viewingDoc.category?.includes("Evaluación") ? (
-                <div className="space-y-4 font-sans text-xs text-muted-foreground">
-                  <p>
-                    <strong className="text-foreground">Objetivo de la prueba:</strong> Cuantificar
-                    la severidad de la sintomatología ansiosa/depresiva durante el último período de
-                    dos semanas mediante reactivos estandarizados.
-                  </p>
-                  <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
-                    <div className="flex justify-between font-bold text-foreground">
-                      <span>Puntaje Bruto Obtenido:</span>
-                      <span className="text-primary">31 Puntos</span>
-                    </div>
-                    <div className="flex justify-between font-bold text-foreground">
-                      <span>Rango Interpretativo:</span>
-                      <span className="text-destructive font-semibold">Sintomatología Ansiosa Severa</span>
-                    </div>
-                  </div>
-                  <p>
-                    <strong className="text-foreground">Conclusiones preliminares:</strong> Se
-                    observa marcada hiperreactividad fisiológica (sudoración, sensación de ahogo)
-                    asociada a distorsiones de catastrofismo y sobregeneralización. Se recomienda
-                    abordaje TCC intensivo.
+                    Los archivos en esta bóveda se almacenan en un bucket privado protegido por políticas de seguridad RLS a nivel de base de datos. Ningún usuario externo puede acceder al documento sin una URL firmada generada con credenciales autorizadas.
                   </p>
                 </div>
-              ) : (
-                <div className="space-y-4 font-sans text-xs text-muted-foreground">
-                  <p>
-                    <strong className="text-foreground">Informe de Evolución Psicológica:</strong> El
-                    paciente acude a consulta demostrando buena adherencia al plan de tratamiento.
-                    Se han cumplido las metas de autorregulación emocional y disminución de crisis
-                    en un 60%.
-                  </p>
-                  <p>
-                    Se extiende el presente informe a solicitud de la parte interesada para los fines
-                    que considere pertinentes.
-                  </p>
-                </div>
-              )}
+              </div>
             </div>
 
             {/* Viewer Actions */}
@@ -443,14 +515,14 @@ export default function DocumentosView() {
       {/* Modal: Subir Documento */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="w-full max-w-lg rounded-3xl border bg-card p-6 sm:p-8 shadow-xl">
+          <div className="w-full max-w-lg rounded-3xl border bg-card p-6 sm:p-8 shadow-xl my-8">
             <div className="flex items-center justify-between border-b pb-4">
               <div>
                 <h2 className="text-xl font-bold tracking-tight text-foreground">
                   Registrar Documento en Bóveda
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Asocia un informe, consentimiento o prueba al paciente.
+                  Almacena informes y consentimientos en la bóveda privada.
                 </p>
               </div>
               <button
@@ -496,7 +568,7 @@ export default function DocumentosView() {
                 <input
                   type="text"
                   required
-                  placeholder="Ej. Escala_STAI_Ansiedad_Estado.pdf"
+                  placeholder="Ej. Consentimiento_Informado_Terapia.pdf"
                   value={fileName}
                   onChange={(e) => setFileName(e.target.value)}
                   className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
@@ -505,18 +577,44 @@ export default function DocumentosView() {
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                  Categoría
+                  Categoría Clínica *
                 </label>
                 <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  value={categoryLabel}
+                  onChange={(e) => setCategoryLabel(e.target.value)}
                   className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none"
                 >
-                  <option value="Evaluación Psicométrica">Evaluación Psicométrica</option>
-                  <option value="Consentimiento Informado">Consentimiento Informado</option>
-                  <option value="Informe Clínico">Informe Clínico</option>
-                  <option value="Contrato Terapéutico">Contrato Terapéutico</option>
+                  {Object.keys(CATEGORY_MAP).map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
                 </select>
+              </div>
+
+              {/* Toggle de Compartición con el Paciente */}
+              <div className="rounded-2xl border border-primary/20 bg-secondary/30 p-4 space-y-2">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <Share2 size={14} className="text-primary" /> Compartir con el paciente en su portal
+                    </span>
+                    <span className="text-[11px] text-muted-foreground block">
+                      Permite que el paciente visualice y descargue este archivo desde su portal seguro.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={sharedWithPatient}
+                    onChange={(e) => setSharedWithPatient(e.target.checked)}
+                    className="size-5 rounded border-gray-300 accent-primary cursor-pointer"
+                  />
+                </label>
+                {!sharedWithPatient && (
+                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Lock size={11} /> Documento privado: solo visible para el equipo clínico.
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t">

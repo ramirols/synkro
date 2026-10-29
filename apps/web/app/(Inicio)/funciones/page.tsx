@@ -25,7 +25,6 @@ export default function FuncionesPage() {
 
   return (
     <>
-      <PublicHeader />
       <main className="min-h-screen bg-background py-20 px-6">
         <div className="mx-auto max-w-5xl space-y-16">
           <div className="text-center space-y-4">
@@ -123,7 +122,6 @@ export default function FuncionesPage() {
           </div>
         </div>
       </main>
-      <PublicFooter />
     </>
   );
 }

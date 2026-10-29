@@ -23,7 +23,6 @@ export default function SeguridadPage() {
 
   return (
     <>
-      <PublicHeader />
       <main className="min-h-screen bg-background py-20 px-6">
         <div className="mx-auto max-w-4xl space-y-16">
           <div className="text-center space-y-4">
@@ -101,7 +100,6 @@ export default function SeguridadPage() {
           </div>
         </div>
       </main>
-      <PublicFooter />
     </>
   );
 }

@@ -1,0 +1,28 @@
+# Synkro by VelyonSoft
+
+> Synkro es el SaaS de gestión clínica integral diseñado para psicólogos independientes, consultorios privados y centros psicológicos en Perú y Latinoamérica.
+
+## Resumen Ejecutivo
+- Empresa desarrolladora: VelyonSoft (Perú).
+- Stack tecnológico: Next.js 16 (App Router), React 19, TypeScript estricto, Tailwind CSS 4, Supabase (PostgreSQL 15, Auth, RLS y Storage).
+- Arquitectura desacoplada: Servicios clínicos orientados a interfaz (IClinicalDataService), desacoplando el modo Demostración en memoria del modo Producción multi-tenant con Supabase.
+- Modelo de prueba y suscripción: 14 días de prueba gratuita sin tarjeta de crédito. Planes: Individual (S/ 79 / $22 mes) y Clínica (S/ 189 / $49 mes). Métodos de activación transparente: Yape oficial (997 676 432), transferencia bancaria BCP y confirmación vía WhatsApp.
+
+## Módulos Principales
+1. Expediente Clínico y Gestión de Pacientes: Historias clínicas estructuradas, motivos de consulta, datos de encuadre, contactos de emergencia y asignación por profesional.
+2. Notas de Sesión con Doble Capa de Confidencialidad: Separación física en base de datos entre el resumen de evolución (session_summary) y las notas privadas del terapeuta (session_private_notes), protegidas por RLS estricto y encriptación.
+3. Agenda y Citas: Programación de sesiones presenciales y virtuales con integración directa de enlaces Meet/Zoom y sincronización de estados.
+4. Bóveda Documental Cifrada: Carga segura de evaluaciones psicométricas, consentimientos informados y reportes clínicos (hasta 15 MB) con generación de URLs firmadas temporales (15 minutos).
+5. Portal del Paciente: Acceso individual blindado para pacientes mediante token criptográfico de activación única, permitiéndoles consultar sus citas programadas y documentos autorizados sin exponer información sensible.
+6. Demostración Interactiva Comercial: Entorno aislado en /demo con datos clínicos representativos y operaciones de escritura desactivadas para exploración inmediata sin fricción.
+7. Consola Superadmin VelyonSoft: Panel administrativo en /admin para métricas comerciales agregadas, control de suscripciones y renovación de licencias, sin acceso a historias ni notas confidenciales de pacientes (cumplimiento Ley 29733 de Protección de Datos Personales).
+
+## Enlaces Oficiales
+- Sitio web principal: https://synkro.velyonsoft.com
+- Para psicólogos independientes: https://synkro.velyonsoft.com/psicologos
+- Para centros y clínicas: https://synkro.velyonsoft.com/centros-psicologicos
+- Planes y Precios: https://synkro.velyonsoft.com/precios
+- Demo interactiva: https://synkro.velyonsoft.com/demo
+- Registro gratuito: https://synkro.velyonsoft.com/registrarse
+- Contacto directo / Soporte comercial WhatsApp: +51 997 676 432
+

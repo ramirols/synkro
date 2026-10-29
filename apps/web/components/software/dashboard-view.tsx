@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useClinicalData } from "@/lib/clinical-context";
+import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
 import {
   Users,
   CalendarDays,
@@ -86,27 +87,58 @@ export default function DashboardView() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <Link
-            href={`${basePath}/pacientes`}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-input bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
-          >
-            <Plus size={15} />
-            <span>Nuevo Paciente</span>
-          </Link>
-          <Link
-            href={`${basePath}/agenda`}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-input bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
-          >
-            <Calendar size={15} />
-            <span>Agendar Cita</span>
-          </Link>
-          <Link
-            href={`${basePath}/sesiones`}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-95 transition-opacity"
-          >
-            <Brain size={15} />
-            <span>Registrar Sesión</span>
-          </Link>
+          {isDemo ? (
+            <>
+              <button
+                type="button"
+                onClick={() => notifyDemoWriteBlocked("Crear Nuevo Paciente")}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-input bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors cursor-pointer"
+              >
+                <Plus size={15} />
+                <span>Nuevo Paciente</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => notifyDemoWriteBlocked("Agendar Nueva Cita")}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-input bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors cursor-pointer"
+              >
+                <Calendar size={15} />
+                <span>Agendar Cita</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => notifyDemoWriteBlocked("Registrar Sesión Clínica")}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-95 transition-opacity cursor-pointer"
+              >
+                <Brain size={15} />
+                <span>Registrar Sesión</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href={`${basePath}/pacientes`}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-input bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
+              >
+                <Plus size={15} />
+                <span>Nuevo Paciente</span>
+              </Link>
+              <Link
+                href={`${basePath}/agenda`}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-input bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
+              >
+                <Calendar size={15} />
+                <span>Agendar Cita</span>
+              </Link>
+              <Link
+                href={`${basePath}/sesiones`}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-95 transition-opacity"
+              >
+                <Brain size={15} />
+                <span>Registrar Sesión</span>
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

@@ -8,6 +8,22 @@ import {
 } from "@/lib/types/clinical";
 import { DemoStorage, DEMO_PROFILE } from "./demo-storage";
 
+const DEMO_READONLY_ERROR =
+  "La demo comercial es exclusivamente de exploración interactiva (modo solo lectura). Para crear expedientes reales, agendar citas y gestionar documentación clínica, inicia tu prueba gratuita de 14 días.";
+
+export function notifyDemoWriteBlocked(actionName: string) {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("synkro-demo-write-blocked", {
+        detail: {
+          action: actionName,
+          message: DEMO_READONLY_ERROR,
+        },
+      })
+    );
+  }
+}
+
 export const DemoClinicalDataService: IClinicalDataService = {
   // --- PACIENTES ---
   async getPatients(): Promise<Patient[]> {
@@ -20,43 +36,20 @@ export const DemoClinicalDataService: IClinicalDataService = {
   },
 
   async createPatient(
-    patient: Omit<Patient, "id" | "created_at" | "organization_id">
+    _patient: Omit<Patient, "id" | "created_at" | "organization_id">
   ): Promise<Patient> {
-    const newRecord: Patient = {
-      ...patient,
-      id: `pat-${Date.now()}`,
-      organization_id: "org-demo-001",
-      created_at: new Date().toISOString(),
-    };
-
-    const current = DemoStorage.getPatients();
-    DemoStorage.savePatients([newRecord, ...current]);
-    return newRecord;
+    notifyDemoWriteBlocked("Crear Paciente");
+    throw new Error(DEMO_READONLY_ERROR);
   },
 
-  async updatePatient(id: string, updates: Partial<Patient>): Promise<Patient> {
-    const current = DemoStorage.getPatients();
-    let updatedItem: Patient | null = null;
-
-    const nextList = current.map((p) => {
-      if (p.id === id) {
-        updatedItem = { ...p, ...updates };
-        return updatedItem;
-      }
-      return p;
-    });
-
-    if (!updatedItem) {
-      throw new Error(`Paciente demo con id ${id} no encontrado`);
-    }
-
-    DemoStorage.savePatients(nextList);
-    return updatedItem;
+  async updatePatient(_id: string, _updates: Partial<Patient>): Promise<Patient> {
+    notifyDemoWriteBlocked("Modificar Paciente");
+    throw new Error(DEMO_READONLY_ERROR);
   },
 
-  async deletePatient(id: string): Promise<void> {
-    const current = DemoStorage.getPatients();
-    DemoStorage.savePatients(current.filter((p) => p.id !== id));
+  async deletePatient(_id: string): Promise<void> {
+    notifyDemoWriteBlocked("Eliminar Paciente");
+    throw new Error(DEMO_READONLY_ERROR);
   },
 
   // --- CITAS / AGENDA ---
@@ -71,27 +64,15 @@ export const DemoClinicalDataService: IClinicalDataService = {
   },
 
   async createAppointment(
-    app: Omit<Appointment, "id" | "created_at" | "organization_id" | "professional_id">
+    _app: Omit<Appointment, "id" | "created_at" | "organization_id" | "professional_id">
   ): Promise<Appointment> {
-    const newRecord: Appointment = {
-      ...app,
-      id: `app-${Date.now()}`,
-      organization_id: "org-demo-001",
-      professional_id: DEMO_PROFILE.id,
-      created_at: new Date().toISOString(),
-    };
-
-    const current = DemoStorage.getAppointments();
-    DemoStorage.saveAppointments([...current, newRecord]);
-    return newRecord;
+    notifyDemoWriteBlocked("Agendar Cita");
+    throw new Error(DEMO_READONLY_ERROR);
   },
 
-  async updateAppointmentStatus(appId: string, newStatus: string): Promise<void> {
-    const current = DemoStorage.getAppointments();
-    const updated = current.map((a) =>
-      a.id === appId ? { ...a, status: newStatus as Appointment["status"] } : a
-    );
-    DemoStorage.saveAppointments(updated);
+  async updateAppointmentStatus(_appId: string, _newStatus: string): Promise<void> {
+    notifyDemoWriteBlocked("Actualizar Estado de Cita");
+    throw new Error(DEMO_READONLY_ERROR);
   },
 
   // --- SESIONES CLÍNICAS ---
@@ -106,27 +87,18 @@ export const DemoClinicalDataService: IClinicalDataService = {
   },
 
   async createSession(
-    sess: Omit<Session, "id" | "created_at" | "professional_id">
+    _sess: Omit<Session, "id" | "created_at" | "professional_id">
   ): Promise<Session> {
-    const newRecord: Session = {
-      ...sess,
-      id: `sess-${Date.now()}`,
-      professional_id: DEMO_PROFILE.id,
-      created_at: new Date().toISOString(),
-    };
-
-    if (sess.appointment_id) {
-      await this.updateAppointmentStatus(sess.appointment_id, "completed");
-    }
-
-    const current = DemoStorage.getSessions();
-    DemoStorage.saveSessions([newRecord, ...current]);
-    return newRecord;
+    notifyDemoWriteBlocked("Crear Nota de Sesión");
+    throw new Error(DEMO_READONLY_ERROR);
   },
 
   // --- DOCUMENTOS / BÓVEDA ---
-  async getFiles(): Promise<PatientFile[]> {
-    const files = DemoStorage.getFiles();
+  async getFiles(patientId?: string): Promise<PatientFile[]> {
+    let files = DemoStorage.getFiles();
+    if (patientId) {
+      files = files.filter((f) => f.patient_id === patientId);
+    }
     const patients = DemoStorage.getPatients();
 
     return files.map((f) => ({
@@ -136,17 +108,56 @@ export const DemoClinicalDataService: IClinicalDataService = {
   },
 
   async createFile(
-    file: Omit<PatientFile, "id" | "created_at">
+    _file: Omit<PatientFile, "id" | "created_at">
   ): Promise<PatientFile> {
-    const newRecord: PatientFile = {
-      ...file,
-      id: `file-${Date.now()}`,
-      created_at: new Date().toISOString(),
-    };
+    notifyDemoWriteBlocked("Registrar Documento");
+    throw new Error(DEMO_READONLY_ERROR);
+  },
 
-    const current = DemoStorage.getFiles();
-    DemoStorage.saveFiles([newRecord, ...current]);
-    return newRecord;
+  async uploadFile(
+    _file: File,
+    _patientId: string,
+    _category: "evaluation" | "consent" | "report" | "prescription" | "other" = "other",
+    _sharedWithPatient: boolean = false
+  ): Promise<PatientFile> {
+    notifyDemoWriteBlocked("Subir Archivo Clínico");
+    throw new Error(DEMO_READONLY_ERROR);
+  },
+
+  async getFileSignedUrl(storagePath: string): Promise<string> {
+    // Modo demo: enlace simulado de visualización
+    return `#demo-viewer-${encodeURIComponent(storagePath)}`;
+  },
+
+  async deleteFile(_id: string): Promise<void> {
+    notifyDemoWriteBlocked("Eliminar Documento");
+    throw new Error(DEMO_READONLY_ERROR);
+  },
+
+  // --- PORTAL DEL PACIENTE (DEMO) ---
+  async createPatientPortalInvitation(patientId: string): Promise<{
+    token: string;
+    expires_at: string;
+    invitation_url: string;
+  }> {
+    return {
+      token: "demo-invitation-token-mock",
+      expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
+      invitation_url: `${typeof window !== "undefined" ? window.location.origin : ""}/portal-paciente/activar?token=demo-token-${patientId}`,
+    };
+  },
+
+  async acceptPatientPortalInvitation(_token: string): Promise<{
+    patient_id: string;
+    organization_id: string;
+  }> {
+    notifyDemoWriteBlocked("Activar Portal");
+    throw new Error(DEMO_READONLY_ERROR);
+  },
+
+  async revokePatientPortalAccess(_patientId: string): Promise<void> {
+    notifyDemoWriteBlocked("Revocar Acceso al Portal");
+    throw new Error(DEMO_READONLY_ERROR);
   },
 
   // --- RESUMEN DASHBOARD ---

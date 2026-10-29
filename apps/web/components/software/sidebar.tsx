@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   LogOut,
   Building2,
+  CreditCard,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -22,7 +23,7 @@ export default function Sidebar() {
   const { logout: authLogout } = useAuth();
   const { basePath, isDemo, user } = useClinicalData();
 
-  const isSuperAdmin = !isDemo && (user?.role === "superadmin" || user?.role === "admin");
+  const isSuperAdmin = !isDemo && user?.platform_role === "superadmin";
 
   const items = [
     {
@@ -60,6 +61,11 @@ export default function Sidebar() {
       href: `${basePath}/configuracion`,
       icon: Settings,
     },
+    {
+      name: "Suscripción & Plan",
+      href: `${basePath}/suscripcion`,
+      icon: CreditCard,
+    },
   ];
 
   const handleLogout = async () => {
@@ -72,7 +78,7 @@ export default function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 hidden h-screen w-72 flex-col border-r bg-card/60 backdrop-blur-md px-6 py-7 lg:flex z-30">
-      <div>
+      <div id="tour-brand-header">
         <div className="flex items-center justify-between">
           <Link href={basePath || "/dashboard"} className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
@@ -105,10 +111,26 @@ export default function Sidebar() {
             ? pathname === item.href
             : pathname === item.href || pathname?.startsWith(`${item.href}/`);
 
+          const tourId =
+            item.name === "Dashboard"
+              ? "tour-nav-dashboard"
+              : item.name === "Pacientes"
+              ? "tour-nav-pacientes"
+              : item.name === "Agenda"
+              ? "tour-nav-agenda"
+              : item.name === "Sesiones Clínicas"
+              ? "tour-nav-sesiones"
+              : item.name === "Documentos"
+              ? "tour-nav-documentos"
+              : item.name === "Suscripción & Plan"
+              ? "tour-nav-suscripcion"
+              : undefined;
+
           return (
             <Link
               key={item.href}
               href={item.href}
+              id={tourId}
               className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all ${
                 isActive
                   ? "bg-secondary text-primary font-semibold shadow-xs"
