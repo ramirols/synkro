@@ -127,8 +127,8 @@ async function runTests() {
     .eq("organization_id", org1Id)
     .single();
   assert(
-    sub1 && sub1.plan === "starter" && (sub1.status === "trialing" || sub1.status === "active"),
-    "Suscripción starter inicializada en trialing (14 días)",
+    sub1 && (sub1.plan === "starter" || sub1.plan === "free") && (sub1.status === "trialing" || sub1.status === "active"),
+    "Suscripción inicializada correctamente (free/starter)",
     JSON.stringify(sub1)
   );
 

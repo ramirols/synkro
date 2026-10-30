@@ -60,6 +60,7 @@ export default function RegisterPage() {
             license_number: licenseNumber.trim(),
             clinic_name: clinicName.trim() || (organizationType === "clinic" ? "Centro Psicológico" : "Mi Consulta"),
             organization_type: organizationType,
+            requested_plan: "free",
           },
         },
       });
@@ -114,7 +115,7 @@ export default function RegisterPage() {
             Crea tu consultorio clínico
           </h1>
           <p className="mt-2 text-xs text-muted-foreground">
-            Comienza tu prueba de 14 días sin costo. Organiza tus historias y citas.
+            Comienza con el Plan Gratuito sin costo (hasta 5 pacientes). Organiza tus historias y citas.
           </p>
         </div>
 

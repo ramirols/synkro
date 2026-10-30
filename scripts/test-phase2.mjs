@@ -102,8 +102,8 @@ async function runPhase2Tests() {
 
   subId = subData?.id;
   assert(
-    subData && subData.status === "trialing" && subData.plan === "starter",
-    "Suscripción creada en estado 'trialing' y plan 'starter'",
+    subData && (subData.status === "trialing" || subData.status === "active") && (subData.plan === "starter" || subData.plan === "free"),
+    "Suscripción creada en estado activo/trialing y plan 'free'/'starter'",
     JSON.stringify(subData)
   );
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useClinicalData } from "@/lib/clinical-context";
+import { useSubscription } from "@/lib/subscription-context";
 import {
   LayoutDashboard,
   Users,
@@ -22,51 +23,77 @@ export default function Sidebar() {
   const router = useRouter();
   const { logout: authLogout } = useAuth();
   const { basePath, isDemo, user } = useClinicalData();
+  const { subscription, planConfig } = useSubscription();
 
   const isSuperAdmin = !isDemo && user?.platform_role === "superadmin";
+  const userRole = (user?.role as string) || (isDemo ? "owner" : "owner");
 
-  const items = [
+  // Clínica & Equipo SOLO si el plan es "clinic" (más de 1 profesional contratado)
+  const isClinicPlan =
+    subscription?.plan === "clinic" ||
+    (planConfig?.limits?.maxProfessionals ?? 1) > 1;
+
+  const rawItems = [
     {
       name: "Dashboard",
       href: basePath ? basePath : "/dashboard",
       icon: LayoutDashboard,
+      roles: ["owner", "admin", "psychologist", "assistant"],
     },
     {
       name: "Pacientes",
       href: `${basePath}/pacientes`,
       icon: Users,
+      roles: ["owner", "admin", "psychologist", "assistant"],
     },
     {
       name: "Agenda",
       href: `${basePath}/agenda`,
       icon: CalendarDays,
+      roles: ["owner", "admin", "psychologist", "assistant"],
     },
     {
       name: "Sesiones Clínicas",
       href: `${basePath}/sesiones`,
       icon: Brain,
+      roles: ["owner", "admin", "psychologist"], // Asistentes no acceden a SOAP ni notas privadas
     },
     {
       name: "Documentos",
       href: `${basePath}/documentos`,
       icon: FileText,
+      roles: ["owner", "admin", "psychologist"],
     },
-    {
+  ];
+
+  // Vista exclusiva de centros y clínicas si el plan lo contempla
+  if (isClinicPlan) {
+    rawItems.push({
       name: "Clínica & Equipo",
       href: `${basePath}/profesionales`,
       icon: Building2,
-    },
-    {
-      name: "Mi Perfil & Clínica",
-      href: `${basePath}/configuracion`,
-      icon: Settings,
-    },
-    {
+      roles: ["owner", "admin", "psychologist"],
+    });
+  }
+
+  rawItems.push({
+    name: "Mi Perfil & Clínica",
+    href: `${basePath}/configuracion`,
+    icon: Settings,
+    roles: ["owner", "admin", "psychologist", "assistant"],
+  });
+
+  // Suscripción solo visible para owner/admin (quienes administran la facturación)
+  if (userRole === "owner" || userRole === "admin" || isDemo) {
+    rawItems.push({
       name: "Suscripción & Plan",
       href: `${basePath}/suscripcion`,
       icon: CreditCard,
-    },
-  ];
+      roles: ["owner", "admin"],
+    });
+  }
+
+  const items = rawItems.filter((i) => i.roles.includes(userRole));
 
   const handleLogout = async () => {
     if (isDemo) {

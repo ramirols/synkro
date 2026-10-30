@@ -21,6 +21,7 @@ import {
   Link2,
   Copy,
   Check,
+  MessageCircle,
 } from "lucide-react";
 
 export default function PacienteDetailView({ id }: { id: string }) {
@@ -81,10 +82,6 @@ export default function PacienteDetailView({ id }: { id: string }) {
   }, [id, service]);
 
   const handleGenerateInvitation = async () => {
-    if (isDemo) {
-      notifyDemoWriteBlocked("Generar Invitación al Portal del Paciente");
-      return;
-    }
     if (!service.createPatientPortalInvitation || !patient) return;
     try {
       setInvitationLoading(true);
@@ -465,12 +462,26 @@ export default function PacienteDetailView({ id }: { id: string }) {
                     <button
                       type="button"
                       onClick={handleCopyLink}
-                      className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+                      className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer"
                     >
                       {copied ? <Check size={12} /> : <Copy size={12} />}
                       <span>{copied ? "Copiado" : "Copiar"}</span>
                     </button>
+                    <a
+                      href={`https://wa.me/${patient.phone ? patient.phone.replace(/[^0-9]/g, "") : ""}?text=${encodeURIComponent(
+                        `Hola ${patient.first_name}, te comparto tu enlace de acceso seguro al Portal del Paciente de Synkro para ver tus próximas citas y documentos: ${invitationUrl}`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700 transition-colors shadow-2xs"
+                    >
+                      <MessageCircle size={12} />
+                      <span>WhatsApp</span>
+                    </a>
                   </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    💡 <strong>Para probarlo tú mismo:</strong> Ábrelo en una ventana de incógnito o en tu móvil para no interferir con tu sesión activa de psicólogo.
+                  </p>
                 </div>
               )}
 

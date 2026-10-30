@@ -252,46 +252,51 @@ export default function PacientesView() {
                 </tr>
               ) : (
                 filteredPatients.map((p) => (
-                  <tr key={p.id} className="transition-colors hover:bg-muted/30">
+                  <tr key={p.id} className="transition-colors hover:bg-muted/30 group">
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-xl bg-secondary font-bold text-primary text-xs">
-                          {p.first_name[0]}
-                          {p.last_name[0]}
+                      <Link
+                        href={`${basePath}/pacientes/${p.id}`}
+                        className="flex items-center gap-3 group-hover:text-primary transition-colors"
+                      >
+                        <div className="flex size-10 items-center justify-center rounded-xl bg-secondary font-bold text-primary text-xs shrink-0">
+                          {p.first_name?.[0] || "P"}
+                          {p.last_name?.[0] || ""}
                         </div>
                         <div>
-                          <Link
-                            href={`${basePath}/pacientes/${p.id}`}
-                            className="font-semibold text-foreground hover:text-primary transition-colors block"
-                          >
+                          <span className="font-semibold text-foreground group-hover:text-primary transition-colors block text-sm">
                             {p.first_name} {p.last_name}
-                          </Link>
-                          <span className="text-xs text-muted-foreground">
-                            {p.gender || "Paciente"} •{" "}
-                            {p.birth_date || "Fecha no esp."}
+                          </span>
+                          <span className="text-xs text-muted-foreground block">
+                            {p.gender || "Paciente"} • {p.birth_date || "Fecha no esp."}
                           </span>
                         </div>
-                      </div>
+                      </Link>
                     </td>
 
                     <td className="px-6 py-4">
-                      <div className="space-y-0.5 text-xs text-muted-foreground">
-                        {p.phone && (
+                      <div className="space-y-1 text-xs text-muted-foreground">
+                        {p.phone ? (
                           <div className="flex items-center gap-1.5 font-medium text-foreground">
-                            <Phone size={12} className="text-primary" /> {p.phone}
+                            <Phone size={12} className="text-primary shrink-0" />
+                            <span>{p.phone}</span>
                           </div>
+                        ) : (
+                          <span className="text-muted-foreground/60 italic block">Sin teléfono</span>
                         )}
-                        {p.email && (
+                        {p.email ? (
                           <div className="flex items-center gap-1.5">
-                            <Mail size={12} /> {p.email}
+                            <Mail size={12} className="shrink-0 text-muted-foreground" />
+                            <span className="truncate max-w-[200px]">{p.email}</span>
                           </div>
+                        ) : (
+                          <span className="text-muted-foreground/60 italic block">Sin correo</span>
                         )}
                       </div>
                     </td>
 
                     <td className="px-6 py-4">
                       <div className="max-w-xs space-y-1">
-                        <p className="text-xs font-medium text-foreground line-clamp-1">
+                        <p className="text-xs font-medium text-foreground line-clamp-1" title={p.consultation_reason || "Consulta general"}>
                           {p.consultation_reason || "Consulta psicológica general"}
                         </p>
                         <span className="inline-block rounded-md bg-secondary px-2 py-0.5 text-[10px] font-semibold text-primary">
@@ -302,7 +307,7 @@ export default function PacientesView() {
 
                     <td className="px-6 py-4">
                       <span
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                           p.status === "activo"
                             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                             : p.status === "evaluacion"
@@ -326,7 +331,7 @@ export default function PacientesView() {
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`${basePath}/pacientes/${p.id}`}
-                          className="rounded-lg border border-input bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors shadow-2xs"
+                          className="rounded-lg border border-input bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted hover:border-primary/40 transition-colors shadow-2xs"
                         >
                           Expediente
                         </Link>

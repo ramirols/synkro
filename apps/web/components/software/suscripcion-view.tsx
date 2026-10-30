@@ -104,16 +104,16 @@ export default function SuscripcionView() {
 
   const modalWhatsAppLink = selectedPlanData
     ? getCommercialWhatsAppLink({
-        intent: "plan_hire",
-        planName: `${selectedPlanData.name} (${selectedMonths} mes${selectedMonths > 1 ? "es" : ""})`,
-        price: `${selectedPlanData.currencySymbol} ${totalPrice}`,
-        organizationName: subscription.organization_name,
-        organizationId: subscription.organization_id,
-      })
+      intent: "plan_hire",
+      planName: `${selectedPlanData.name} (${selectedMonths} mes${selectedMonths > 1 ? "es" : ""})`,
+      price: `${selectedPlanData.currencySymbol} ${totalPrice}`,
+      organizationName: subscription.organization_name,
+      organizationId: subscription.organization_id,
+    })
     : "#";
 
   return (
-    <div className="space-y-8 max-w-6xl pb-16">
+    <div className="space-y-8 w-full pb-16">
       {/* Header */}
       <div>
         <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
@@ -151,7 +151,15 @@ export default function SuscripcionView() {
 
           <div className="flex items-center gap-3">
             {/* Status Badge */}
-            {isTrial && (
+            {plan === "free" ? (
+              <div className="flex items-center gap-2 rounded-2xl bg-secondary border border-primary/20 px-4 py-2 text-primary">
+                <ShieldCheck size={16} />
+                <div className="text-left">
+                  <span className="block text-[10px] uppercase font-bold tracking-wider">Plan Gratuito</span>
+                  <span className="text-xs font-bold">Activo sin costo (5 pacientes máx.)</span>
+                </div>
+              </div>
+            ) : isTrial ? (
               <div className="flex items-center gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/30 px-4 py-2 text-amber-800 dark:text-amber-300">
                 <Clock size={16} />
                 <div className="text-left">
@@ -161,9 +169,7 @@ export default function SuscripcionView() {
                   </span>
                 </div>
               </div>
-            )}
-
-            {isActive && (
+            ) : isActive ? (
               <div className="flex items-center gap-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 text-emerald-800 dark:text-emerald-300">
                 <ShieldCheck size={16} />
                 <div className="text-left">
@@ -171,7 +177,7 @@ export default function SuscripcionView() {
                   <span className="text-xs font-bold">Al día</span>
                 </div>
               </div>
-            )}
+            ) : null}
 
             {isPastDue && (
               <div className="flex items-center gap-2 rounded-2xl bg-amber-600/10 border border-amber-600/30 px-4 py-2 text-amber-900 dark:text-amber-300">
@@ -202,7 +208,7 @@ export default function SuscripcionView() {
             <div className="flex items-baseline gap-1.5">
               <span className="text-lg font-bold text-foreground">{planConfig.name}</span>
               <span className="text-xs text-muted-foreground font-semibold">
-                ({planConfig.currencySymbol} {planConfig.priceMonthly}/m)
+                ({planConfig.priceMonthly === 0 ? "Gratis" : `${planConfig.currencySymbol} ${planConfig.priceMonthly}/m`})
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground">{planConfig.tagline}</p>
@@ -264,20 +270,18 @@ export default function SuscripcionView() {
             return (
               <div
                 key={pKey}
-                className={`rounded-3xl border p-6 flex flex-col justify-between transition-all bg-card ${
-                  pKey === "professional"
-                    ? "border-2 border-primary shadow-lg ring-1 ring-primary/20"
-                    : "border-border shadow-2xs hover:border-primary/40"
-                }`}
+                className={`rounded-3xl border p-6 flex flex-col justify-between transition-all bg-card ${pKey === "professional"
+                  ? "border-2 border-primary shadow-lg ring-1 ring-primary/20"
+                  : "border-border shadow-2xs hover:border-primary/40"
+                  }`}
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span
-                      className={`rounded-md px-2.5 py-0.5 text-[10px] font-bold ${
-                        pKey === "professional"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-secondary text-primary"
-                      }`}
+                      className={`rounded-md px-2.5 py-0.5 text-[10px] font-bold ${pKey === "professional"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-primary"
+                        }`}
                     >
                       {p.badge}
                     </span>
@@ -314,14 +318,19 @@ export default function SuscripcionView() {
                   <button
                     type="button"
                     onClick={() => setSelectedPlanModal(pKey)}
-                    className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer ${
-                      pKey === "professional"
-                        ? "bg-primary text-primary-foreground hover:opacity-90"
-                        : "border border-input bg-card text-foreground hover:bg-muted"
-                    }`}
+                    className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer ${pKey === "professional"
+                      ? "bg-primary text-primary-foreground hover:opacity-90"
+                      : "border border-input bg-card text-foreground hover:bg-muted"
+                      }`}
                   >
                     <Smartphone size={14} />
-                    <span>{isCurrentPlan ? "Renovar con Yape" : `Cambiar a ${p.name}`}</span>
+                    <span>
+                      {isCurrentPlan
+                        ? "Plan Actual"
+                        : plan === "free"
+                          ? `Mejorar a ${p.name}`
+                          : `Cambiar a ${p.name}`}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -420,11 +429,10 @@ export default function SuscripcionView() {
                     key={m}
                     type="button"
                     onClick={() => setSelectedMonths(m)}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                      selectedMonths === m
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-input bg-card text-muted-foreground hover:bg-muted"
-                    }`}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${selectedMonths === m
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-input bg-card text-muted-foreground hover:bg-muted"
+                      }`}
                   >
                     {m} {m === 1 ? "Mes" : "Meses"}
                   </button>
@@ -495,4 +503,3 @@ export default function SuscripcionView() {
     </div>
   );
 }
-

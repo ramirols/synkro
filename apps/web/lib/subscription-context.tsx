@@ -133,7 +133,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     fetchSubscription();
   }, [fetchSubscription]);
 
-  const plan = subscription?.plan || "starter";
+  const plan = subscription?.plan || "free";
   const planConfig = getPlanConfig(plan);
   const status = subscription?.status || "trialing";
   const effectiveStatus = subscription?.effective_status || status;

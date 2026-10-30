@@ -2,7 +2,7 @@
 // SYNKRO — CONFIGURACIÓN CENTRALIZADA DE PLANES Y LÍMITES COMERCIALES
 // ==============================================================================
 
-export type SubscriptionPlan = "starter" | "professional" | "clinic";
+export type SubscriptionPlan = "free" | "starter" | "professional" | "clinic";
 
 export type SubscriptionStatus =
   | "trialing"
@@ -48,16 +48,48 @@ export interface PlanConfig {
 }
 
 export const PLANS_CONFIG: Record<SubscriptionPlan, PlanConfig> = {
+  free: {
+    id: "free",
+    name: "Gratuito",
+    badge: "Plan Gratuito",
+    priceMonthly: 0,
+    currency: "PEN",
+    currencySymbol: "S/",
+    billingPeriodLabel: "/ mes (Gratis)",
+    tagline: "Plan inicial sin costo para psicólogos que inician su consulta privada.",
+    targetAudience: "Psicólogos independientes principiantes",
+    recommended: false,
+    limits: {
+      maxPatients: 5,
+      maxProfessionals: 1,
+      hasAiSoap: false,
+      hasPrivateNotes: false,
+      hasFileVault: false,
+      hasPhysicalBoxes: false,
+      hasTriageAndReferrals: false,
+      hasSupervisionCommittee: false,
+    },
+    features: [
+      "Hasta 5 pacientes activos registrados",
+      "1 profesional titular (independiente)",
+      "Horario semanal visual y agenda de citas",
+      "Fichas clínicas e historial digital",
+      "Notas de sesión estructuradas estándar",
+      "Portal del paciente incluido",
+      "Gratis sin vencimiento",
+    ],
+  },
+
   starter: {
     id: "starter",
     name: "Starter",
-    badge: "Práctica Inicial",
+    badge: "Práctica en Crecimiento",
     priceMonthly: 49,
     currency: "PEN",
     currencySymbol: "S/",
     billingPeriodLabel: "/ mes (PEN)",
-    tagline: "Para psicólogos independientes que están iniciando su consulta privada.",
-    targetAudience: "Psicólogos independientes principiantes",
+    tagline: "Para psicólogos independientes con consulta activa en crecimiento.",
+    targetAudience: "Psicólogos independientes",
     recommended: false,
     limits: {
       maxPatients: 20,
@@ -76,6 +108,7 @@ export const PLANS_CONFIG: Record<SubscriptionPlan, PlanConfig> = {
       "Fichas clínicas e historial digital",
       "Notas de sesión estructuradas estándar",
       "Portal del paciente incluido",
+      "Soporte por WhatsApp",
     ],
   },
 
@@ -148,10 +181,10 @@ export function getPlanConfig(planId: string | null | undefined): PlanConfig {
   if (planId && planId in PLANS_CONFIG) {
     return PLANS_CONFIG[planId as SubscriptionPlan];
   }
-  return PLANS_CONFIG.starter;
+  return PLANS_CONFIG.free;
 }
 
 export function formatPrice(amount: number): string {
+  if (amount === 0) return "Gratis";
   return `S/ ${amount}`;
 }
-
