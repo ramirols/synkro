@@ -17,6 +17,45 @@ import {
   Shield,
   AlertCircle,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const STATUS_OPTIONS: Record<string, string> = {
+  todos: "Todos los Estados",
+  activo: "Activos",
+  evaluacion: "En Evaluación",
+  alta: "Alta Terapéutica",
+  inactivo: "Inactivos",
+};
+
+const APPROACH_OPTIONS: Record<string, string> = {
+  todos: "Todos los Enfoques",
+  "Cognitivo Conductual (TCC)": "TCC",
+  "Terapia de Aceptación y Compromiso (ACT)": "ACT",
+  "Terapia Sistémica de Pareja": "Sistémica",
+  "Humanista Existencial": "Humanista",
+};
+
+const GENDER_OPTIONS: Record<string, string> = {
+  Femenino: "Femenino",
+  Masculino: "Masculino",
+  "No binario": "No binario",
+  Pareja: "Pareja",
+  Otro: "Otro",
+};
+
+const THERAPEUTIC_APPROACH_OPTIONS: Record<string, string> = {
+  "Cognitivo Conductual (TCC)": "Cognitivo Conductual (TCC)",
+  "Terapia de Aceptación y Compromiso (ACT)": "Terapia ACT",
+  "Terapia Sistémica de Pareja": "Sistémica de Pareja",
+  "Humanista Existencial": "Humanista Existencial",
+  "Psicoanálisis Relacional": "Psicoanálisis Relacional",
+};
 
 export default function PacientesView() {
   const { service, basePath, isDemo } = useClinicalData();
@@ -190,31 +229,39 @@ export default function PacientesView() {
             <span>Filtros:</span>
           </div>
 
-          <select
+          <Select
+            items={STATUS_OPTIONS}
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 rounded-xl border bg-background px-3 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+            onValueChange={(val) => val && setStatusFilter(val)}
           >
-            <option value="todos">Todos los Estados</option>
-            <option value="activo">Activos</option>
-            <option value="evaluacion">En Evaluación</option>
-            <option value="alta">Alta Terapéutica</option>
-            <option value="inactivo">Inactivos</option>
-          </select>
+            <SelectTrigger className="h-10 min-w-36 rounded-xl border bg-background px-3 text-xs">
+              <SelectValue placeholder="Todos los Estados" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(STATUS_OPTIONS).map(([val, label]) => (
+                <SelectItem key={val} value={val}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          <select
+          <Select
+            items={APPROACH_OPTIONS}
             value={approachFilter}
-            onChange={(e) => setApproachFilter(e.target.value)}
-            className="h-10 rounded-xl border bg-background px-3 text-xs outline-none focus:ring-2 focus:ring-primary/20 max-w-[200px] truncate"
+            onValueChange={(val) => val && setApproachFilter(val)}
           >
-            <option value="todos">Todos los Enfoques</option>
-            <option value="Cognitivo Conductual (TCC)">TCC</option>
-            <option value="Terapia de Aceptación y Compromiso (ACT)">
-              ACT
-            </option>
-            <option value="Terapia Sistémica de Pareja">Sistémica</option>
-            <option value="Humanista Existencial">Humanista</option>
-          </select>
+            <SelectTrigger className="h-10 min-w-36 max-w-[200px] rounded-xl border bg-background px-3 text-xs truncate">
+              <SelectValue placeholder="Todos los Enfoques" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(APPROACH_OPTIONS).map(([val, label]) => (
+                <SelectItem key={val} value={val}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -450,38 +497,44 @@ export default function PacientesView() {
                   <label className="mb-1 block text-xs font-semibold text-foreground">
                     Género / Identidad
                   </label>
-                  <select
+                  <Select
+                    items={GENDER_OPTIONS}
                     value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                    onValueChange={(val) => val && setGender(val)}
                   >
-                    <option value="Femenino">Femenino</option>
-                    <option value="Masculino">Masculino</option>
-                    <option value="No binario">No binario</option>
-                    <option value="Pareja">Pareja</option>
-                    <option value="Otro">Otro</option>
-                  </select>
+                    <SelectTrigger className="h-10 w-full rounded-xl border bg-background px-3 text-xs">
+                      <SelectValue placeholder="Selecciona género" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(GENDER_OPTIONS).map(([val, label]) => (
+                        <SelectItem key={val} value={val}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-foreground">
                     Enfoque Terapéutico
                   </label>
-                  <select
+                  <Select
+                    items={THERAPEUTIC_APPROACH_OPTIONS}
                     value={therapeuticApproach}
-                    onChange={(e) => setTherapeuticApproach(e.target.value)}
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-xs outline-none focus:ring-2 focus:ring-primary/20 truncate"
+                    onValueChange={(val) => val && setTherapeuticApproach(val)}
                   >
-                    <option value="Cognitivo Conductual (TCC)">TCC</option>
-                    <option value="Terapia de Aceptación y Compromiso (ACT)">
-                      ACT
-                    </option>
-                    <option value="Terapia Sistémica de Pareja">Sistémica</option>
-                    <option value="Humanista Existencial">Humanista</option>
-                    <option value="Psicoanálisis Relacional">
-                      Psicoanálisis
-                    </option>
-                  </select>
+                    <SelectTrigger className="h-10 w-full rounded-xl border bg-background px-3 text-xs truncate">
+                      <SelectValue placeholder="Selecciona enfoque" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(THERAPEUTIC_APPROACH_OPTIONS).map(([val, label]) => (
+                        <SelectItem key={val} value={val}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

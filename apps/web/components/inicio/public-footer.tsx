@@ -21,7 +21,7 @@ export default function PublicFooter() {
               </span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Software de gestión clínica, historias digitales y notas SOAP con IA para psicólogos y centros de salud mental en Perú y Latinoamérica.
+              Software de gestión clínica, historias digitales y notas SOAP estructuradas para psicólogos y centros de salud mental en Perú y Latinoamérica.
             </p>
           </div>
 

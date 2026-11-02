@@ -5,9 +5,37 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { ClinicalDataProvider } from "@/lib/clinical-context";
 import { SubscriptionProvider } from "@/lib/subscription-context";
+import { SidebarProvider, useSidebarLayout } from "@/lib/sidebar-context";
 import Sidebar from "@/components/software/sidebar";
+import MobileSidebar from "@/components/software/mobile-sidebar";
 import Topbar from "@/components/software/topbar";
 import SubscriptionBanner from "@/components/software/subscription-banner";
+
+function SoftwareLayoutContent({ children }: { children: React.ReactNode }) {
+  const { isCollapsed } = useSidebarLayout();
+
+  return (
+    <div className="min-h-screen bg-background">
+      <MobileSidebar />
+      <div className="flex">
+        <Sidebar />
+
+        <div
+          className={`flex-1 min-w-0 transition-[margin] duration-200 ease-in-out ${
+            isCollapsed ? "lg:ml-20" : "lg:ml-72"
+          }`}
+        >
+          <Topbar />
+
+          <main className="px-4 py-6 sm:px-6 sm:py-8 lg:px-10 min-w-0 overflow-x-hidden">
+            <SubscriptionBanner />
+            {children}
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function SoftwareLayout({
   children,
@@ -47,20 +75,9 @@ export default function SoftwareLayout({
   return (
     <ClinicalDataProvider mode="production">
       <SubscriptionProvider>
-        <div className="min-h-screen bg-background">
-          <div className="flex">
-            <Sidebar />
-
-            <div className="flex-1 lg:ml-72">
-              <Topbar />
-
-              <main className="px-6 py-8 lg:px-10">
-                <SubscriptionBanner />
-                {children}
-              </main>
-            </div>
-          </div>
-        </div>
+        <SidebarProvider>
+          <SoftwareLayoutContent>{children}</SoftwareLayoutContent>
+        </SidebarProvider>
       </SubscriptionProvider>
     </ClinicalDataProvider>
   );

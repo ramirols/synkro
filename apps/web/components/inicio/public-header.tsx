@@ -125,7 +125,7 @@ export default function PublicHeader() {
                       Para Psicólogos Independientes
                     </span>
                     <span className="text-[11px] text-muted-foreground leading-snug block mt-0.5">
-                      Consulta privada, notas SOAP con IA y portal de pacientes
+                      Consulta privada, notas SOAP estructuradas y portal de pacientes
                     </span>
                   </div>
                 </Link>
@@ -187,7 +187,7 @@ export default function PublicHeader() {
                       Funcionalidades Clínicas
                     </span>
                     <span className="text-[11px] text-muted-foreground leading-snug block mt-0.5">
-                      Agenda de horario, notas SOAP con IA y Google Meet
+                      Agenda de horario, notas clínicas SOAP y Google Meet
                     </span>
                   </div>
                 </Link>

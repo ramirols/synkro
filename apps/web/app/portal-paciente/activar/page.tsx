@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -159,6 +160,7 @@ function ActivarPortalContent() {
     if (typeof window !== "undefined") {
       navigator.clipboard.writeText(window.location.href);
       setCopiedLink(true);
+      toast.success("Enlace de activación copiado al portapapeles.");
       setTimeout(() => setCopiedLink(false), 2500);
     }
   };
@@ -170,21 +172,25 @@ function ActivarPortalContent() {
 
     if (!token) {
       setFormError("Token de activación no válido.");
+      toast.error("Token de activación no válido.");
       return;
     }
 
     if (!email || !email.includes("@")) {
       setFormError("Por favor ingresa un correo electrónico válido.");
+      toast.error("Por favor ingresa un correo electrónico válido.");
       return;
     }
 
     if (password.length < 6) {
       setFormError("La contraseña debe tener al menos 6 caracteres.");
+      toast.error("La contraseña debe tener al menos 6 caracteres.");
       return;
     }
 
     if (mode === "register" && password !== confirmPassword) {
       setFormError("Las contraseñas no coinciden.");
+      toast.error("Las contraseñas no coinciden.");
       return;
     }
 
@@ -253,9 +259,12 @@ function ActivarPortalContent() {
       }
 
       setActivationStatus("success");
+      toast.success("¡Tu cuenta de paciente ha sido activada exitosamente!");
     } catch (err: any) {
       console.error("Error en flujo de activación:", err);
-      setFormError(err.message || "Ocurrió un error inesperado al procesar tu solicitud.");
+      const errorMsg = err.message || "Ocurrió un error inesperado al procesar tu solicitud.";
+      setFormError(errorMsg);
+      toast.error(errorMsg);
       setActivationStatus("idle");
     } finally {
       setSubmitting(false);

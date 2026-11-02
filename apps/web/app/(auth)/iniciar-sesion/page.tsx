@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import {
   Brain,
@@ -26,15 +27,17 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setErrorMsg("Por favor ingresa tu correo y contraseña.");
+    if (!email.trim() || !password) {
+      toast.error("Por favor ingresa tu correo y contraseña.");
       return;
     }
 
     try {
       setLoading(true);
       setErrorMsg("");
-      const loggedUser = await login(email, password);
+      const loggedUser = await login(email.trim().toLowerCase(), password);
+
+      toast.success("Sesión iniciada con éxito.");
 
       // Redirección basada estrictamente en el rol verificado en base de datos
       if (loggedUser?.platform_role === "superadmin") {
@@ -47,13 +50,16 @@ export default function LoginPage() {
     } catch (err: any) {
       console.error("Login error:", err);
       const msg = err.message || "";
+      let userFriendly = "Error al iniciar sesión. Intenta nuevamente.";
       if (msg.includes("Invalid login credentials") || msg.includes("invalid_credentials")) {
-        setErrorMsg("Credenciales incorrectas. Verifica tu correo y contraseña.");
+        userFriendly = "Credenciales incorrectas. Verifica tu correo y contraseña.";
       } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
-        setErrorMsg("No se pudo conectar con el servidor de Supabase. Revisa tu conexión o las variables de entorno.");
-      } else {
-        setErrorMsg(msg || "Error al iniciar sesión. Intenta nuevamente.");
+        userFriendly = "No se pudo conectar con el servidor de Supabase. Revisa tu conexión.";
+      } else if (msg) {
+        userFriendly = msg;
       }
+      setErrorMsg(userFriendly);
+      toast.error(userFriendly);
     } finally {
       setLoading(false);
     }

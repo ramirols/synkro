@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useClinicalData } from "@/lib/clinical-context";
+import { useSubscription } from "@/lib/subscription-context";
 import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
+import { toast } from "sonner";
 import {
   Building2,
   Users2,
@@ -27,15 +29,117 @@ import {
   ChevronRight,
   TrendingUp,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const DEMO_THERAPISTS = [
+  {
+    id: "p1",
+    name: "Lic. Alejandro Mendoza V.",
+    role: "Director Clínico & Psicólogo Titular",
+    license: "C.Ps.P. 28419",
+    specialty: "Psicología Clínica & TCC (Adultos)",
+    casesCount: 6,
+    weeklyHours: "24 hrs / sem",
+    status: "En Consulta (Box 1)",
+    avatar: "A",
+    approach: "Terapia Cognitivo Conductual y Terapia de Aceptación y Compromiso (ACT)",
+    email: "alejandro.mendoza@synkro.com",
+  },
+  {
+    id: "p2",
+    name: "Dra. Claudia Paredes",
+    role: "Especialista Infanto-Juvenil",
+    license: "C.Ps.P. 31204",
+    specialty: "Psicología Infantil, Adolescentes & TEA",
+    casesCount: 14,
+    weeklyHours: "28 hrs / sem",
+    status: "Disponible",
+    avatar: "C",
+    approach: "Terapia de Juego, Neurodesarrollo y Orientación Parental",
+    email: "claudia.paredes@synkro.com",
+  },
+  {
+    id: "p3",
+    name: "Mtr. Jimena Rivas",
+    role: "Terapeuta de Pareja & Familia",
+    license: "C.Ps.P. 19582",
+    specialty: "Terapia Sistémica & Relacional",
+    casesCount: 11,
+    weeklyHours: "20 hrs / sem",
+    status: "Disponible (Cita 17:00)",
+    avatar: "J",
+    approach: "Enfoque Sistémico Estructural y Terapia Focalizada en las Emociones (EFT)",
+    email: "jimena.rivas@synkro.com",
+  },
+  {
+    id: "p4",
+    name: "Lic. Marco Aurelio Soto",
+    role: "Neuropsicólogo Clínico",
+    license: "C.Ps.P. 24890",
+    specialty: "Evaluación Neurocognitiva & Rehabilitación",
+    casesCount: 8,
+    weeklyHours: "16 hrs / sem",
+    status: "En Evaluación (Box 3)",
+    avatar: "M",
+    approach: "Baterías Neuropsicológicas (WISC-V, WAIS-IV, Test de Stroop, Minimental)",
+    email: "marco.soto@synkro.com",
+  },
+];
+
+const REF_PATIENT_OPTIONS: Record<string, string> = {
+  "Camila Valdivia": "Camila Valdivia (Ansiedad Generalizada)",
+  "Sofía Morales": "Sofía Morales (Duelo Complicado)",
+  "Mateo Huamán": "Mateo Huamán (Procrastinación & Ansiedad)",
+  "Carlos & Andrea": "Carlos & Andrea (Terapia de Pareja)",
+  "Lucía Benavides": "Lucía Benavides (Depresión Reactiva)",
+};
+
+const REF_TO_OPTIONS: Record<string, string> = {
+  "Dra. Claudia Paredes": "Dra. Claudia Paredes (Infanto-Juvenil & TEA)",
+  "Mtr. Jimena Rivas": "Mtr. Jimena Rivas (Pareja & Familia Sistémica)",
+  "Lic. Marco Soto": "Lic. Marco Soto (Neuropsicología Clínica)",
+  "Lic. Alejandro Mendoza": "Lic. Alejandro Mendoza (TCC Adultos)",
+};
+
+const REF_PRIORITY_OPTIONS: Record<string, string> = {
+  Alta: "Alta (Atención prioritaria en menos de 48 hrs)",
+  Media: "Media (Próxima sesión disponible)",
+  Normal: "Normal (Consulta programada regular)",
+};
+
+const SPECIALTY_OPTIONS: Record<string, string> = {
+  "Psicoterapia Cognitivo Conductual (TCC)": "Psicoterapia Cognitivo Conductual (TCC)",
+  "Psicología Infantil & Adolescentes": "Psicología Infantil & Adolescentes",
+  "Terapia de Pareja & Familia Sistémica": "Terapia de Pareja & Familia Sistémica",
+  "Neuropsicología Clínica": "Neuropsicología Clínica",
+  "Terapia Dialéctico Conductual (DBT)": "Terapia Dialéctico Conductual (DBT)",
+};
 
 export default function ProfesionalesView() {
-  const { isDemo } = useClinicalData();
+  const { isDemo, service, user } = useClinicalData();
+  const { isClinic, subscription, checkProfessionalLimit } = useSubscription();
   const [activeTab, setActiveTab] = useState<"equipo" | "derivaciones" | "boxes" | "supervision">("equipo");
-  const [loading, setLoading] = useState(false);
+  const [loadingTeam, setLoadingTeam] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
-  // Derivaciones Demo State
+  // Equipo real de la clínica (en producción) vs Demo
+  const [realTherapists, setRealTherapists] = useState<typeof DEMO_THERAPISTS>([]);
+  const [patients, setPatients] = useState<any[]>([]);
+
+  // Estados del formulario de invitación
+  const [inviteName, setInviteName] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLicense, setInviteLicense] = useState("");
+  const [inviteSpecialty, setInviteSpecialty] = useState("Psicoterapia Cognitivo Conductual (TCC)");
+
+  // Derivaciones State
   const [referrals, setReferrals] = useState([
     {
       id: "ref-1",
@@ -75,70 +179,177 @@ export default function ProfesionalesView() {
   const [refReason, setRefReason] = useState("");
   const [refPriority, setRefPriority] = useState("Media");
 
-  // Multi-therapist team data
-  const therapists = [
-    {
-      id: "p1",
-      name: "Lic. Alejandro Mendoza V.",
-      role: "Director Clínico & Psicólogo Titular",
-      license: "C.Ps.P. 28419",
-      specialty: "Psicología Clínica & TCC (Adultos)",
-      casesCount: 6,
-      weeklyHours: "24 hrs / sem",
-      status: "En Consulta (Box 1)",
-      avatar: "A",
-      approach: "Terapia Cognitivo Conductual y Terapia de Aceptación y Compromiso (ACT)",
-      email: "alejandro.mendoza@synkro.com",
-    },
-    {
-      id: "p2",
-      name: "Dra. Claudia Paredes",
-      role: "Especialista Infanto-Juvenil",
-      license: "C.Ps.P. 31204",
-      specialty: "Psicología Infantil, Adolescentes & TEA",
-      casesCount: 14,
-      weeklyHours: "28 hrs / sem",
-      status: "Disponible",
-      avatar: "C",
-      approach: "Terapia de Juego, Neurodesarrollo y Orientación Parental",
-      email: "claudia.paredes@synkro.com",
-    },
-    {
-      id: "p3",
-      name: "Mtr. Jimena Rivas",
-      role: "Terapeuta de Pareja & Familia",
-      license: "C.Ps.P. 19582",
-      specialty: "Terapia Sistémica & Relacional",
-      casesCount: 11,
-      weeklyHours: "20 hrs / sem",
-      status: "Disponible (Cita 17:00)",
-      avatar: "J",
-      approach: "Enfoque Sistémico Estructural y Terapia Focalizada en las Emociones (EFT)",
-      email: "jimena.rivas@synkro.com",
-    },
-    {
-      id: "p4",
-      name: "Lic. Marco Aurelio Soto",
-      role: "Neuropsicólogo Clínico",
-      license: "C.Ps.P. 24890",
-      specialty: "Evaluación Neurocognitiva & Rehabilitación",
-      casesCount: 8,
-      weeklyHours: "16 hrs / sem",
-      status: "En Evaluación (Box 3)",
-      avatar: "M",
-      approach: "Baterías Neuropsicológicas (WISC-V, WAIS-IV, Test de Stroop, Minimental)",
-      email: "marco.soto@synkro.com",
-    },
-  ];
+  // Cargar equipo real y pacientes de la clínica con aislamiento RLS
+  useEffect(() => {
+    if (isDemo) return;
 
-  // Consultorios Físicos (Boxes)
+    let isMounted = true;
+    async function loadClinicData() {
+      try {
+        setLoadingTeam(true);
+
+        // 1. Obtener pacientes reales de esta clínica
+        const pts = await service.getPatients();
+        if (isMounted) {
+          setPatients(pts || []);
+        }
+
+        // 2. Obtener profesionales de esta organización desde Supabase (RLS aplica is_member_of)
+        const { data: profs, error } = await supabase
+          .from("professionals")
+          .select(`
+            id,
+            organization_id,
+            profile_id,
+            specialty,
+            license_number,
+            bio,
+            created_at,
+            profiles (
+              id,
+              full_name,
+              role,
+              avatar_url,
+              phone,
+              specialty,
+              license_number,
+              email
+            )
+          `)
+          .order("created_at", { ascending: true });
+
+        if (error) {
+          console.error("[Profesionales] Error al cargar equipo:", error);
+        }
+
+        if (isMounted) {
+          if (profs && profs.length > 0) {
+            const mapped = profs.map((p: any, idx: number) => {
+              const prof = p.profiles;
+              const name = prof?.full_name || (idx === 0 ? user?.full_name : null) || "Psicólogo Colegiado";
+              const role = idx === 0 ? "Director Clínico & Psicólogo Titular" : "Psicólogo(a) del Centro";
+              const license = p.license_number || prof?.license_number || (idx === 0 ? user?.license_number : null) || "C.Ps.P. Registrado";
+              const specialty = p.specialty || prof?.specialty || (idx === 0 ? user?.specialty : null) || "Psicología Clínica";
+              const initials = name
+                .split(" ")
+                .filter((w: string) => !w.startsWith("Lic") && !w.startsWith("Dr") && !w.startsWith("Mtr"))
+                .map((w: string) => w[0])
+                .slice(0, 2)
+                .join("")
+                .toUpperCase() || "PS";
+
+              return {
+                id: p.id,
+                name,
+                role,
+                license,
+                specialty,
+                casesCount: Math.max(1, Math.round((pts?.length || 0) / profs.length)),
+                weeklyHours: "24 hrs / sem",
+                status: "Disponible",
+                avatar: initials,
+                approach: p.bio || "Enfoque clínico basado en evidencia",
+                email: (idx === 0 ? user?.email : prof?.email) || "",
+              };
+            });
+            setRealTherapists(mapped);
+          } else if (user) {
+            setRealTherapists([
+              {
+                id: "titular",
+                name: user.full_name || "Psicólogo Titular",
+                role: "Director Clínico & Psicólogo Titular",
+                license: user.license_number || "C.Ps.P. Registrado",
+                specialty: user.specialty || "Psicología Clínica",
+                casesCount: pts?.length || 0,
+                weeklyHours: "24 hrs / sem",
+                status: "Disponible (Box 1)",
+                avatar: user.full_name?.charAt(0).toUpperCase() || "P",
+                approach: "Enfoque clínico basado en evidencia",
+                email: user.email || "",
+              },
+            ]);
+          }
+        }
+      } catch (err) {
+        console.error("Error al cargar datos del centro:", err);
+      } finally {
+        if (isMounted) setLoadingTeam(false);
+      }
+    }
+
+    loadClinicData();
+    return () => {
+      isMounted = false;
+    };
+  }, [isDemo, service, user]);
+
+  // Lista de terapeutas activa según el modo
+  const therapists = isDemo
+    ? DEMO_THERAPISTS
+    : realTherapists.length > 0
+    ? realTherapists
+    : [
+        {
+          id: "titular",
+          name: user?.full_name || "Psicólogo Titular",
+          role: "Director Clínico & Psicólogo Titular",
+          license: user?.license_number || "C.Ps.P. Registrado",
+          specialty: user?.specialty || "Psicología Clínica",
+          casesCount: patients.length,
+          weeklyHours: "24 hrs / sem",
+          status: "Disponible (Box 1)",
+          avatar: user?.full_name?.charAt(0).toUpperCase() || "P",
+          approach: "Enfoque clínico basado en evidencia",
+          email: user?.email || "",
+        },
+      ];
+
+  // Opciones dinámicas de pacientes para derivaciones
+  const refPatientOptions: Record<string, string> = isDemo
+    ? REF_PATIENT_OPTIONS
+    : patients.length > 0
+    ? Object.fromEntries(
+        patients.map((p) => [
+          `${p.first_name} ${p.last_name}`,
+          `${p.first_name} ${p.last_name} (${p.therapeutic_approach || "TCC"})`,
+        ])
+      )
+    : REF_PATIENT_OPTIONS;
+
+  // Opciones dinámicas de terapeutas para derivaciones
+  const refToOptions: Record<string, string> = isDemo
+    ? REF_TO_OPTIONS
+    : therapists.length > 0
+    ? Object.fromEntries(
+        therapists.map((t) => [
+          t.name,
+          `${t.name} (${t.specialty})`,
+        ])
+      )
+    : REF_TO_OPTIONS;
+
+  // Sincronizar selección inicial de paciente y terapeuta destino
+  useEffect(() => {
+    const pKeys = Object.keys(refPatientOptions);
+    if (pKeys.length > 0 && !pKeys.includes(refPatient)) {
+      setRefPatient(pKeys[0]);
+    }
+    const tKeys = Object.keys(refToOptions);
+    if (tKeys.length > 0 && !tKeys.includes(refTo)) {
+      setRefTo(tKeys[0]);
+    }
+  }, [refPatientOptions, refToOptions, refPatient, refTo]);
+
+  // Consultorios Físicos (Boxes) con ocupante dinámico
+  const titularOccupant = therapists[0]?.name || "Director Clínico";
   const boxes = [
     {
       id: "box-1",
       name: "Consultorio Box 1 (Adultos & TCC)",
       type: "Psicoterapia Individual",
-      currentOccupant: "Lic. Alejandro Mendoza",
-      patient: "Camila Valdivia",
+      currentOccupant: titularOccupant,
+      patient: patients[0] ? `${patients[0].first_name} ${patients[0].last_name}` : "Camila Valdivia",
       time: "09:00 - 10:00 hrs",
       status: "occupied",
       features: "Sillones ergonómicos, insonorización acústica, iluminación regulable cálida.",
@@ -149,7 +360,7 @@ export default function ProfesionalesView() {
       type: "Psicoterapia Niños & Adolescentes",
       currentOccupant: null,
       patient: null,
-      time: "Libre hasta las 15:00 hrs",
+      time: "Libre para reservas",
       status: "available",
       features: "Caja de arena, mesa de dibujo, juegos terapéuticos proyectivos, piso acolchado.",
     },
@@ -157,10 +368,10 @@ export default function ProfesionalesView() {
       id: "box-3",
       name: "Consultorio Box 3 (Parejas & Familias)",
       type: "Terapia Relacional",
-      currentOccupant: "Lic. Marco Soto",
-      patient: "Evaluación Neurocognitiva",
-      time: "10:00 - 11:30 hrs",
-      status: "occupied",
+      currentOccupant: therapists[1]?.name || null,
+      patient: patients[1] ? `${patients[1].first_name} ${patients[1].last_name}` : null,
+      time: therapists[1] ? "10:00 - 11:30 hrs" : "Disponible para reservas",
+      status: therapists[1] ? "occupied" : "available",
       features: "Mesa de evaluación con cronómetro y kit psicométrico, sofá triple de confort familiar.",
     },
     {
@@ -179,13 +390,20 @@ export default function ProfesionalesView() {
     e.preventDefault();
     if (!refReason.trim()) return;
 
+    if (isDemo) {
+      notifyDemoWriteBlocked("Nueva Derivación / Triage");
+      setIsReferralModalOpen(false);
+      return;
+    }
+
+    const titularName = (therapists[0]?.name) || "Director Clínico";
     const newRef = {
       id: `ref-${Date.now()}`,
       patient: refPatient,
-      fromTherapist: "Lic. Alejandro Mendoza",
+      fromTherapist: titularName,
       toTherapist: refTo,
       reason: refReason.trim(),
-      date: "28 Septiembre 2026",
+      date: new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }),
       status: "En Revisión",
       priority: refPriority,
     };
@@ -193,7 +411,111 @@ export default function ProfesionalesView() {
     setReferrals([newRef, ...referrals]);
     setRefReason("");
     setIsReferralModalOpen(false);
+    toast.success(`Derivación de ${refPatient} registrada hacia ${refTo}.`);
   };
+
+  const handleInviteProfessional = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteName.trim() || !inviteEmail.trim()) {
+      toast.error("Por favor completa el nombre y correo del profesional.");
+      return;
+    }
+
+    if (isDemo) {
+      notifyDemoWriteBlocked("Invitar nuevo terapeuta a la clínica");
+      setIsInviteModalOpen(false);
+      return;
+    }
+
+    // Comprobar límite de profesionales del plan
+    const check = checkProfessionalLimit();
+    if (!check.allowed) {
+      toast.error(check.message || "Has alcanzado el límite de profesionales de tu plan.");
+      return;
+    }
+
+    const initials = inviteName
+      .trim()
+      .split(" ")
+      .filter((w) => !w.startsWith("Lic") && !w.startsWith("Dr") && !w.startsWith("Mtr"))
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "PS";
+
+    const newTherapist: (typeof DEMO_THERAPISTS)[0] = {
+      id: `invited-${Date.now()}`,
+      name: inviteName.trim(),
+      role: "Psicólogo(a) Colaborador(a)",
+      license: inviteLicense.trim() || "C.Ps.P. en trámite",
+      specialty: inviteSpecialty,
+      casesCount: 0,
+      weeklyHours: "Por coordinar",
+      status: "Invitación Enviada",
+      avatar: initials,
+      approach: "Enfoque clínico en integración",
+      email: inviteEmail.trim(),
+    };
+
+    setRealTherapists((prev) => [...prev, newTherapist]);
+    toast.success(`Invitación enviada a ${inviteEmail.trim()}. Se ha incorporado a tu equipo.`);
+    setInviteName("");
+    setInviteEmail("");
+    setInviteLicense("");
+    setIsInviteModalOpen(false);
+  };
+
+  if (!isClinic && !isDemo) {
+    return (
+      <div className="space-y-6 max-w-3xl mx-auto py-8">
+        <div className="rounded-3xl border bg-card p-8 sm:p-10 text-center space-y-6 shadow-xs">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Building2 size={32} />
+          </div>
+
+          <div className="space-y-2">
+            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-primary">
+              Módulo Exclusivo para Centros & Clínicas
+            </span>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              Gestión de Equipo de Psicólogos & Consultorios
+            </h1>
+            <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
+              Tu cuenta actual está configurada como <strong>Psicólogo(a) Independiente</strong>, optimizada para la gestión directa y privada de tus propios pacientes y agenda clínica.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border bg-muted/40 p-5 text-left text-xs text-muted-foreground space-y-3">
+            <p className="font-bold text-foreground">
+              ¿Qué incluye la modalidad de Centro o Clínica Psicológica?
+            </p>
+            <ul className="space-y-2 list-disc list-inside">
+              <li>Gestión de hasta 10 profesionales o terapeutas colaboradores en tu centro.</li>
+              <li>Triage y derivaciones internas entre especialistas con traspaso seguro de historial.</li>
+              <li>Asignación y reserva de consultorios físicos (boxes) y salas de atención.</li>
+              <li>Supervisión de casos y co-visión clínica bajo secreto profesional.</li>
+            </ul>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <Link
+              href="/suscripcion"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-xs hover:opacity-90 transition-opacity"
+            >
+              <Sparkles size={14} />
+              <span>Conocer el Plan Clínica (S/ 189/mes)</span>
+            </Link>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 rounded-xl border border-input bg-card px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <span>Volver a mi Consulta</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -250,7 +572,9 @@ export default function ProfesionalesView() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             Terapeutas en Red
           </span>
-          <p className="text-2xl font-black text-foreground">4 Psicólogos</p>
+          <p className="text-2xl font-black text-foreground">
+            {therapists.length} {therapists.length === 1 ? "Psicólogo" : "Psicólogos"}
+          </p>
           <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
             <CheckCircle2 size={12} /> Colegiaturas C.Ps.P. verificadas
           </span>
@@ -260,7 +584,9 @@ export default function ProfesionalesView() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             Casos Clínicos Activos
           </span>
-          <p className="text-2xl font-black text-foreground">39 Pacientes</p>
+          <p className="text-2xl font-black text-foreground">
+            {isDemo ? 39 : (patients.length || subscription?.patient_count || 0)} Pacientes
+          </p>
           <span className="text-[11px] text-muted-foreground">
             Distribuidos por especialidad
           </span>
@@ -270,9 +596,11 @@ export default function ProfesionalesView() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             Consultorios Físicos (Boxes)
           </span>
-          <p className="text-2xl font-black text-foreground">2 / 4 En Uso</p>
+          <p className="text-2xl font-black text-foreground">
+            {boxes.filter((b) => b.status === "occupied").length} / {boxes.length} En Uso
+          </p>
           <span className="text-[11px] text-sky-600 font-semibold">
-            50% de ocupación en sede
+            {Math.round((boxes.filter((b) => b.status === "occupied").length / boxes.length) * 100)}% de ocupación en sede
           </span>
         </div>
 
@@ -613,48 +941,66 @@ export default function ProfesionalesView() {
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Paciente a Derivar *
                 </label>
-                <select
+                <Select
+                  items={refPatientOptions}
                   value={refPatient}
-                  onChange={(e) => setRefPatient(e.target.value)}
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none"
+                  onValueChange={(val) => val && setRefPatient(val)}
                 >
-                  <option value="Camila Valdivia">Camila Valdivia (Ansiedad Generalizada)</option>
-                  <option value="Sofía Morales">Sofía Morales (Duelo Complicado)</option>
-                  <option value="Mateo Huamán">Mateo Huamán (Procrastinación & Ansiedad)</option>
-                  <option value="Carlos & Andrea">Carlos & Andrea (Terapia de Pareja)</option>
-                  <option value="Lucía Benavides">Lucía Benavides (Depresión Reactiva)</option>
-                </select>
+                  <SelectTrigger className="h-10 w-full rounded-xl border bg-background px-3 text-sm">
+                    <SelectValue placeholder="Selecciona paciente..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(refPatientOptions).map(([val, label]) => (
+                      <SelectItem key={val} value={val}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Profesional de Destino *
                 </label>
-                <select
+                <Select
+                  items={refToOptions}
                   value={refTo}
-                  onChange={(e) => setRefTo(e.target.value)}
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none"
+                  onValueChange={(val) => val && setRefTo(val)}
                 >
-                  <option value="Dra. Claudia Paredes">Dra. Claudia Paredes (Infanto-Juvenil & TEA)</option>
-                  <option value="Mtr. Jimena Rivas">Mtr. Jimena Rivas (Pareja & Familia Sistémica)</option>
-                  <option value="Lic. Marco Soto">Lic. Marco Soto (Neuropsicología Clínica)</option>
-                  <option value="Lic. Alejandro Mendoza">Lic. Alejandro Mendoza (TCC Adultos)</option>
-                </select>
+                  <SelectTrigger className="h-10 w-full rounded-xl border bg-background px-3 text-sm">
+                    <SelectValue placeholder="Selecciona profesional..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(refToOptions).map(([val, label]) => (
+                      <SelectItem key={val} value={val}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Prioridad del Caso
                 </label>
-                <select
+                <Select
+                  items={REF_PRIORITY_OPTIONS}
                   value={refPriority}
-                  onChange={(e) => setRefPriority(e.target.value)}
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none"
+                  onValueChange={(val) => val && setRefPriority(val)}
                 >
-                  <option value="Alta">Alta (Atención prioritaria en menos de 48 hrs)</option>
-                  <option value="Media">Media (Próxima sesión disponible)</option>
-                  <option value="Normal">Normal (Consulta programada regular)</option>
-                </select>
+                  <SelectTrigger className="h-10 w-full rounded-xl border bg-background px-3 text-sm">
+                    <SelectValue placeholder="Prioridad..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(REF_PRIORITY_OPTIONS).map(([val, label]) => (
+                      <SelectItem key={val} value={val}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -712,37 +1058,45 @@ export default function ProfesionalesView() {
               </button>
             </div>
 
-            <div className="space-y-4 text-xs">
+            <form onSubmit={handleInviteProfessional} className="space-y-4 text-xs">
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                  Nombre Completo del Psicólogo
+                  Nombre Completo del Psicólogo *
                 </label>
                 <input
                   type="text"
+                  required
                   placeholder="Ej. Lic. Fernando Salcedo"
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none"
+                  value={inviteName}
+                  onChange={(e) => setInviteName(e.target.value)}
+                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                  Correo Electrónico Profesional
+                  Correo Electrónico Profesional *
                 </label>
                 <input
                   type="email"
+                  required
                   placeholder="fernando.salcedo@clinicabienestar.pe"
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                  Número de Colegiatura C.Ps.P.
+                  Número de Colegiatura C.Ps.P. (Opcional)
                 </label>
                 <input
                   type="text"
                   placeholder="C.Ps.P. 33910"
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none"
+                  value={inviteLicense}
+                  onChange={(e) => setInviteLicense(e.target.value)}
+                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
@@ -750,13 +1104,22 @@ export default function ProfesionalesView() {
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Especialidad Principal
                 </label>
-                <select className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none">
-                  <option>Psicoterapia Cognitivo Conductual (TCC)</option>
-                  <option>Psicología Infantil & Adolescentes</option>
-                  <option>Terapia de Pareja & Familia Sistémica</option>
-                  <option>Neuropsicología Clínica</option>
-                  <option>Terapia Dialéctico Conductual (DBT)</option>
-                </select>
+                <Select
+                  items={SPECIALTY_OPTIONS}
+                  value={inviteSpecialty}
+                  onValueChange={(val) => val && setInviteSpecialty(val)}
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl border bg-background px-3 text-sm">
+                    <SelectValue placeholder="Selecciona especialidad..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(SPECIALTY_OPTIONS).map(([val, label]) => (
+                      <SelectItem key={val} value={val}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t">
@@ -768,17 +1131,13 @@ export default function ProfesionalesView() {
                   Cancelar
                 </button>
                 <button
-                  type="button"
-                  onClick={() => {
-                    alert("Invitación generada con token seguro y enviada por correo.");
-                    setIsInviteModalOpen(false);
-                  }}
-                  className="rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-90"
+                  type="submit"
+                  className="rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-90 cursor-pointer"
                 >
                   Enviar Invitación
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

@@ -33,6 +33,26 @@ import {
   Lightbulb,
   Building2,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const MODALITY_FILTER_OPTIONS: Record<string, string> = {
+  todos: "Presencial & Virtual",
+  presencial: "Solo Presencial (Box)",
+  virtual: "Solo Telepsicología",
+};
+
+const BOX_OPTIONS: Record<string, string> = {
+  "Box 1 (Adultos / TCC)": "Box 1 (Adultos / TCC)",
+  "Box 2 (Infanto-Juvenil & Juegos)": "Box 2 (Infanto-Juvenil & Juegos)",
+  "Box 3 (Terapia de Pareja y Familia)": "Box 3 (Terapia de Pareja y Familia)",
+  "Sala Gesell (Supervisión)": "Sala Gesell (Supervisión)",
+};
 
 export default function AgendaView() {
   const { service, basePath, isDemo, user } = useClinicalData();
@@ -420,15 +440,22 @@ export default function AgendaView() {
 
         <div className="flex items-center gap-1.5 text-xs">
           <span className="text-muted-foreground">Modalidad:</span>
-          <select
+          <Select
+            items={MODALITY_FILTER_OPTIONS}
             value={modalityFilter}
-            onChange={(e) => setModalityFilter(e.target.value)}
-            className="rounded-lg border bg-background px-2.5 py-1 text-xs font-medium outline-none"
+            onValueChange={(val) => val && setModalityFilter(val)}
           >
-            <option value="todos">Presencial & Virtual</option>
-            <option value="presencial">Solo Presencial (Box)</option>
-            <option value="virtual">Solo Telepsicología</option>
-          </select>
+            <SelectTrigger className="h-8 rounded-lg border bg-background px-2.5 text-xs font-medium">
+              <SelectValue placeholder="Presencial & Virtual" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(MODALITY_FILTER_OPTIONS).map(([val, label]) => (
+                <SelectItem key={val} value={val}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -891,18 +918,24 @@ export default function AgendaView() {
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Seleccionar Paciente *
                 </label>
-                <select
-                  required
+                <Select
+                  items={Object.fromEntries(
+                    patients.map((p) => [p.id, `${p.first_name} ${p.last_name}`])
+                  )}
                   value={selectedPatientId}
-                  onChange={(e) => setSelectedPatientId(e.target.value)}
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none"
+                  onValueChange={(val) => val && setSelectedPatientId(val)}
                 >
-                  {patients.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.first_name} {p.last_name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="h-10 w-full rounded-xl border bg-background px-3 text-sm">
+                    <SelectValue placeholder="Selecciona un paciente..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {patients.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.first_name} {p.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -968,16 +1001,22 @@ export default function AgendaView() {
                   <label className="mb-1.5 block text-xs font-semibold text-foreground">
                     Asignación de Consultorio / Box Físico
                   </label>
-                  <select
+                  <Select
+                    items={BOX_OPTIONS}
                     value={consultorioBox}
-                    onChange={(e) => setConsultorioBox(e.target.value)}
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none"
+                    onValueChange={(val) => val && setConsultorioBox(val)}
                   >
-                    <option value="Box 1 (Adultos / TCC)">Box 1 (Adultos / TCC)</option>
-                    <option value="Box 2 (Infanto-Juvenil & Juegos)">Box 2 (Infanto-Juvenil & Juegos)</option>
-                    <option value="Box 3 (Terapia de Pareja y Familia)">Box 3 (Terapia de Pareja y Familia)</option>
-                    <option value="Sala Gesell (Supervisión)">Sala Gesell (Supervisión)</option>
-                  </select>
+                    <SelectTrigger className="h-10 w-full rounded-xl border bg-background px-3 text-sm">
+                      <SelectValue placeholder="Selecciona un consultorio..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(BOX_OPTIONS).map(([val, label]) => (
+                        <SelectItem key={val} value={val}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               ) : (
                 <div>

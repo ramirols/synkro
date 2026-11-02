@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Patient, Session, Appointment, PatientFile } from "@/lib/types/clinical";
 import { useClinicalData } from "@/lib/clinical-context";
 import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
@@ -92,15 +93,18 @@ export default function PacienteDetailView({ id }: { id: string }) {
         type: "success",
         message: "Enlace generado con éxito. Válido durante 7 días.",
       });
+      toast.success("Enlace de activación generado exitosamente.");
       setPatient({
         ...patient,
         portal_status: "invited",
       });
     } catch (err: any) {
+      const msg = err.message || "Error al generar invitación.";
       setInvitationFeedback({
         type: "error",
-        message: err.message || "Error al generar invitación.",
+        message: msg,
       });
+      toast.error(msg);
     } finally {
       setInvitationLoading(false);
     }
@@ -122,15 +126,18 @@ export default function PacienteDetailView({ id }: { id: string }) {
         type: "success",
         message: "Acceso al portal revocado correctamente.",
       });
+      toast.success("Acceso al portal revocado.");
       setPatient({
         ...patient,
         portal_status: "revoked",
       });
     } catch (err: any) {
+      const msg = err.message || "Error al revocar acceso.";
       setInvitationFeedback({
         type: "error",
-        message: err.message || "Error al revocar acceso.",
+        message: msg,
       });
+      toast.error(msg);
     } finally {
       setInvitationLoading(false);
     }
@@ -140,6 +147,7 @@ export default function PacienteDetailView({ id }: { id: string }) {
     if (!invitationUrl) return;
     navigator.clipboard.writeText(invitationUrl);
     setCopied(true);
+    toast.success("Enlace de activación copiado al portapapeles.");
     setTimeout(() => setCopied(false), 2000);
   };
 

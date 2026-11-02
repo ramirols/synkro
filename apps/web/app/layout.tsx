@@ -3,6 +3,7 @@ import { ViewTransitions } from "next-view-transitions";
 import "@fontsource-variable/manrope";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: {
@@ -39,7 +40,10 @@ export default function RootLayout({
     <ViewTransitions>
       <html lang="es">
         <body className="min-h-screen bg-background font-sans antialiased text-foreground">
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            <Toaster position="top-right" richColors closeButton />
+          </AuthProvider>
         </body>
       </html>
     </ViewTransitions>

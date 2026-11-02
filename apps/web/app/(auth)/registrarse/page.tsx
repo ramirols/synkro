@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Brain,
   Lock,
@@ -10,17 +11,16 @@ import {
   User,
   ArrowRight,
   ArrowLeft,
-  ShieldCheck,
   Building,
   Award,
   MessageCircle,
   Eye,
   EyeOff,
-  Users,
+  Sparkles,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
-import { COMMERCIAL_CONFIG, getCommercialWhatsAppLink } from "@/lib/config/commercial";
+import { getCommercialWhatsAppLink } from "@/lib/config/commercial";
 import { OrganizationType } from "@/lib/config/plans";
 
 export default function RegisterPage() {
@@ -33,8 +33,6 @@ export default function RegisterPage() {
   const [licenseNumber, setLicenseNumber] = useState("");
   const [clinicName, setClinicName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [confirmationNeeded, setConfirmationNeeded] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
 
   const whatsappActivationLink = getCommercialWhatsAppLink({
     intent: "trial_activation",
@@ -42,23 +40,34 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName || !email || !password) {
-      setErrorMsg("Por favor completa los campos obligatorios.");
+
+    const cleanName = fullName.trim();
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanName || !cleanEmail || !password) {
+      toast.error("Por favor completa los campos obligatorios.");
       return;
     }
 
+    if (password.length < 6) {
+      toast.error("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+
+    const toastId = toast.loading("Configurando tu consultorio clínico...");
     try {
       setLoading(true);
-      setErrorMsg("");
 
       const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password: password,
+        email: cleanEmail,
+        password,
         options: {
           data: {
-            full_name: fullName.trim(),
+            full_name: cleanName,
             license_number: licenseNumber.trim(),
-            clinic_name: clinicName.trim() || (organizationType === "clinic" ? "Centro Psicológico" : "Mi Consulta"),
+            clinic_name:
+              clinicName.trim() ||
+              (organizationType === "clinic" ? "Centro Psicológico" : "Mi Consulta"),
             organization_type: organizationType,
             requested_plan: "free",
           },
@@ -69,17 +78,37 @@ export default function RegisterPage() {
         throw error;
       }
 
-      if (!data.session && data.user) {
-        setConfirmationNeeded(true);
-        return;
+      // Si la sesión no se establece de inmediato, iniciar sesión automáticamente
+      if (!data.session) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
+
+        if (signInError) {
+          throw signInError;
+        }
       }
+
+      toast.success("¡Bienvenido a Synkro! Tu consultorio ha sido creado.", {
+        id: toastId,
+        description: "Espacio en Plan Gratuito listo para operar.",
+      });
 
       router.push("/dashboard");
     } catch (err: any) {
       console.error("Register error:", err);
-      setErrorMsg(
-        err.message || "Ocurrió un error al registrar tu cuenta en Supabase. Intenta de nuevo."
-      );
+      const msg = err.message || "";
+      if (msg.includes("already registered") || msg.includes("already in use")) {
+        toast.error("Ya existe una cuenta con este correo.", {
+          id: toastId,
+          description: "Por favor inicia sesión o recupera tu contraseña.",
+        });
+      } else {
+        toast.error(msg || "Error al crear la cuenta. Intenta de nuevo.", {
+          id: toastId,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -101,7 +130,10 @@ export default function RegisterPage() {
 
         {/* Brand Header */}
         <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-2.5 text-2xl font-bold tracking-tight text-foreground">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2.5 text-2xl font-bold tracking-tight text-foreground"
+          >
             <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <Brain size={20} />
             </div>
@@ -115,7 +147,7 @@ export default function RegisterPage() {
             Crea tu consultorio clínico
           </h1>
           <p className="mt-2 text-xs text-muted-foreground">
-            Comienza con el Plan Gratuito sin costo (hasta 5 pacientes). Organiza tus historias y citas.
+            Comienza con el Plan Gratuito sin costo (hasta 5 pacientes). Acceso inmediato.
           </p>
         </div>
 
@@ -142,37 +174,9 @@ export default function RegisterPage() {
           </a>
         </div>
 
-        {/* Formulario de Registro Estándar */}
+        {/* Formulario de Registro Limpio */}
         <div className="rounded-3xl border bg-card p-6 sm:p-8 shadow-xs">
-          {errorMsg && (
-            <div className="mb-5 rounded-xl bg-destructive/10 p-3 text-xs font-semibold text-destructive">
-              {errorMsg}
-            </div>
-          )}
-
-          {confirmationNeeded ? (
-            <div className="space-y-4 text-center py-4 animate-in fade-in duration-300">
-              <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Mail size={32} />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-foreground">Verifica tu correo electrónico</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Hemos enviado un correo de confirmación a <strong className="text-foreground">{email}</strong>.
-                  Por favor abre el enlace para activar tu consultorio e iniciar sesión.
-                </p>
-              </div>
-              <div className="pt-2">
-                <Link
-                  href="/iniciar-sesion"
-                  className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90 w-full"
-                >
-                  Ir a Iniciar Sesión
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4">
             {/* Modalidad de Práctica */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
@@ -182,7 +186,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setOrganizationType("independent")}
-                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                     organizationType === "independent"
                       ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
                       : "border-input bg-card text-muted-foreground hover:bg-muted"
@@ -196,7 +200,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setOrganizationType("clinic")}
-                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                     organizationType === "clinic"
                       ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
                       : "border-input bg-card text-muted-foreground hover:bg-muted"
@@ -207,6 +211,18 @@ export default function RegisterPage() {
                   <span className="text-[10px] font-normal opacity-80">Multiprofesional</span>
                 </button>
               </div>
+
+              <div className="mt-2 rounded-xl bg-secondary/50 p-2.5 text-[11px] text-muted-foreground leading-relaxed">
+                {organizationType === "independent" ? (
+                  <span>
+                    <strong>Consulta Privada:</strong> Optimizado para tu práctica individual, historias clínicas privadas y agenda personal (Planes Free, Starter o Pro).
+                  </span>
+                ) : (
+                  <span>
+                    <strong>Centro Clínico:</strong> Habilita la gestión de equipo de terapeutas, asignación de boxes y derivaciones internas (Plan Clínica).
+                  </span>
+                )}
+              </div>
             </div>
 
             <div>
@@ -214,7 +230,10 @@ export default function RegisterPage() {
                 Nombre Completo del Profesional *
               </label>
               <div className="relative">
-                <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <User
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
                 <input
                   type="text"
                   required
@@ -231,7 +250,10 @@ export default function RegisterPage() {
                 Correo Electrónico *
               </label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Mail
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
                 <input
                   type="email"
                   required
@@ -248,7 +270,10 @@ export default function RegisterPage() {
                 Contraseña *
               </label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Lock
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
                 <input
                   type={showPassword ? "text" : "password"}
                   required
@@ -260,7 +285,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
                   tabIndex={-1}
                   title={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
                 >
@@ -275,7 +300,10 @@ export default function RegisterPage() {
                   N° Colegiatura C.Ps.P.
                 </label>
                 <div className="relative">
-                  <Award size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Award
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  />
                   <input
                     type="text"
                     placeholder="C.Ps.P. 28419"
@@ -288,13 +316,22 @@ export default function RegisterPage() {
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                  {organizationType === "clinic" ? "Nombre de la Clínica *" : "Nombre del Consultorio"}
+                  {organizationType === "clinic"
+                    ? "Nombre de la Clínica *"
+                    : "Nombre del Consultorio"}
                 </label>
                 <div className="relative">
-                  <Building size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Building
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  />
                   <input
                     type="text"
-                    placeholder={organizationType === "clinic" ? "Centro Terapéutico San Isidro" : "Consulta Psicológica"}
+                    placeholder={
+                      organizationType === "clinic"
+                        ? "Centro Terapéutico San Isidro"
+                        : "Consulta Psicológica"
+                    }
                     value={clinicName}
                     onChange={(e) => setClinicName(e.target.value)}
                     className="h-11 w-full rounded-xl border bg-background pl-9 pr-3 text-xs outline-none focus:ring-2 focus:ring-primary/20"
@@ -308,11 +345,16 @@ export default function RegisterPage() {
               disabled={loading}
               className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-xs text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 shadow-xs cursor-pointer"
             >
-              <span>{loading ? "Creando espacio clínico..." : "Iniciar Prueba Gratuita (14 Días)"}</span>
+              <span>
+                {loading
+                  ? "Creando espacio clínico..."
+                  : organizationType === "clinic"
+                  ? "Crear Centro Clínico Gratuito"
+                  : "Crear Consultorio Gratuito"}
+              </span>
               <ArrowRight size={14} />
             </button>
           </form>
-          )}
 
           <div className="mt-6 border-t pt-4 text-center text-xs text-muted-foreground space-y-2">
             <div>

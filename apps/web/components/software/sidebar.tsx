@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useClinicalData } from "@/lib/clinical-context";
 import { useSubscription } from "@/lib/subscription-context";
+import { useSidebarLayout } from "@/lib/sidebar-context";
 import {
   LayoutDashboard,
   Users,
@@ -16,6 +17,8 @@ import {
   LogOut,
   Building2,
   CreditCard,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -23,15 +26,11 @@ export default function Sidebar() {
   const router = useRouter();
   const { logout: authLogout } = useAuth();
   const { basePath, isDemo, user } = useClinicalData();
-  const { subscription, planConfig } = useSubscription();
+  const { subscription, planConfig, isClinic } = useSubscription();
+  const { isCollapsed, toggleSidebar } = useSidebarLayout();
 
   const isSuperAdmin = !isDemo && user?.platform_role === "superadmin";
   const userRole = (user?.role as string) || (isDemo ? "owner" : "owner");
-
-  // Clínica & Equipo SOLO si el plan es "clinic" (más de 1 profesional contratado)
-  const isClinicPlan =
-    subscription?.plan === "clinic" ||
-    (planConfig?.limits?.maxProfessionals ?? 1) > 1;
 
   const rawItems = [
     {
@@ -41,13 +40,13 @@ export default function Sidebar() {
       roles: ["owner", "admin", "psychologist", "assistant"],
     },
     {
-      name: "Pacientes",
+      name: isClinic ? "Pacientes del Centro" : "Pacientes",
       href: `${basePath}/pacientes`,
       icon: Users,
       roles: ["owner", "admin", "psychologist", "assistant"],
     },
     {
-      name: "Agenda",
+      name: isClinic ? "Agenda & Boxes" : "Agenda",
       href: `${basePath}/agenda`,
       icon: CalendarDays,
       roles: ["owner", "admin", "psychologist", "assistant"],
@@ -56,7 +55,7 @@ export default function Sidebar() {
       name: "Sesiones Clínicas",
       href: `${basePath}/sesiones`,
       icon: Brain,
-      roles: ["owner", "admin", "psychologist"], // Asistentes no acceden a SOAP ni notas privadas
+      roles: ["owner", "admin", "psychologist"],
     },
     {
       name: "Documentos",
@@ -66,10 +65,10 @@ export default function Sidebar() {
     },
   ];
 
-  // Vista exclusiva de centros y clínicas si el plan lo contempla
-  if (isClinicPlan) {
+  // Menú exclusivo de gestión para centros y clínicas
+  if (isClinic) {
     rawItems.push({
-      name: "Clínica & Equipo",
+      name: "Equipo de Psicólogos",
       href: `${basePath}/profesionales`,
       icon: Building2,
       roles: ["owner", "admin", "psychologist"],
@@ -77,13 +76,12 @@ export default function Sidebar() {
   }
 
   rawItems.push({
-    name: "Mi Perfil & Clínica",
+    name: isClinic ? "Mi Perfil & Centro" : "Mi Perfil & Consultorio",
     href: `${basePath}/configuracion`,
     icon: Settings,
     roles: ["owner", "admin", "psychologist", "assistant"],
   });
 
-  // Suscripción solo visible para owner/admin (quienes administran la facturación)
   if (userRole === "owner" || userRole === "admin" || isDemo) {
     rawItems.push({
       name: "Suscripción & Plan",
@@ -104,33 +102,74 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 hidden h-screen w-72 flex-col border-r bg-card/60 backdrop-blur-md px-6 py-7 lg:flex z-30">
+    <aside
+      className={`fixed left-0 top-0 hidden h-screen flex-col border-r bg-card/75 backdrop-blur-md lg:flex z-30 transition-[width,padding] duration-200 ease-in-out ${
+        isCollapsed ? "w-20 px-3 py-6" : "w-72 px-6 py-7"
+      }`}
+    >
+      {/* Brand Header */}
       <div id="tour-brand-header">
-        <div className="flex items-center justify-between">
-          <Link href={basePath || "/dashboard"} className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+        {isCollapsed ? (
+          <div className="flex flex-col items-center gap-3">
+            <Link
+              href={basePath || "/dashboard"}
+              title="Synkro by Velyon"
+              className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
+            >
               <Brain size={20} />
-            </div>
-            <div>
-              <span className="text-xl font-bold tracking-tight text-foreground">
-                Synkro
-              </span>
-              <span className="block text-[10px] font-semibold uppercase tracking-wider text-primary">
-                by Velyon
-              </span>
-            </div>
-          </Link>
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-primary">
-            {isDemo ? "Modo Demo" : isSuperAdmin ? "Admin" : "Producción"}
-          </span>
-        </div>
+            </Link>
+            <button
+              onClick={toggleSidebar}
+              title="Expandir barra lateral"
+              className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div className="flex items-center justify-between">
+              <Link href={basePath || "/dashboard"} className="flex items-center gap-2.5">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                  <Brain size={20} />
+                </div>
+                <div>
+                  <span className="text-xl font-bold tracking-tight text-foreground">
+                    Synkro
+                  </span>
+                  <span className="block text-[10px] font-semibold uppercase tracking-wider text-primary">
+                    by Velyon
+                  </span>
+                </div>
+              </Link>
 
-        <p className="mt-3 text-xs text-muted-foreground">
-          {isDemo ? "Demostración Interactiva con Datos Ficticios" : "Gestión clínica & práctica psicológica"}
-        </p>
+              <div className="flex items-center gap-1.5">
+                <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-primary">
+                  {isDemo ? "Demo" : isSuperAdmin ? "Admin" : isClinic ? "Centro" : "Independiente"}
+                </span>
+                <button
+                  onClick={toggleSidebar}
+                  title="Colapsar barra lateral"
+                  className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+              </div>
+            </div>
+
+            <p className="mt-3 text-xs text-muted-foreground line-clamp-1">
+              {isDemo
+                ? "Demostración de Centro Clínico"
+                : isClinic
+                ? "Gestión de Centro & Terapeutas"
+                : "Consulta Psicológica Privada"}
+            </p>
+          </div>
+        )}
       </div>
 
-      <nav className="mt-8 space-y-1.5 flex-1">
+      {/* Navigation Links */}
+      <nav className={`mt-7 space-y-1.5 flex-1 ${isCollapsed ? "flex flex-col items-center" : ""}`}>
         {items.map((item) => {
           const Icon = item.icon;
           const isDashboardLink = item.href === (basePath || "/dashboard");
@@ -153,6 +192,25 @@ export default function Sidebar() {
               ? "tour-nav-suscripcion"
               : undefined;
 
+          if (isCollapsed) {
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                id={tourId}
+                title={item.name}
+                className={`flex size-11 items-center justify-center rounded-xl transition-all ${
+                  isActive
+                    ? "bg-secondary text-primary font-semibold shadow-xs"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <Icon size={20} className={isActive ? "text-primary" : ""} />
+                <span className="sr-only">{item.name}</span>
+              </Link>
+            );
+          }
+
           return (
             <Link
               key={item.href}
@@ -165,52 +223,81 @@ export default function Sidebar() {
               }`}
             >
               <Icon size={18} className={isActive ? "text-primary" : ""} />
-              {item.name}
+              <span>{item.name}</span>
             </Link>
           );
         })}
 
-        {/* Consola exclusiva para Superadmin Velyon (solo en producción) */}
+        {/* Consola exclusiva para Superadmin Velyon */}
         {isSuperAdmin && (
-          <Link
-            href="/admin"
-            className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-sm font-semibold text-amber-800 dark:text-amber-300 transition-colors mt-4"
-          >
-            <ShieldAlert size={18} />
-            <span>Consola Velyon Admin</span>
-          </Link>
+          isCollapsed ? (
+            <Link
+              href="/admin"
+              title="Consola Velyon Admin"
+              className="flex size-11 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors mt-3"
+            >
+              <ShieldAlert size={20} />
+              <span className="sr-only">Consola Velyon Admin</span>
+            </Link>
+          ) : (
+            <Link
+              href="/admin"
+              className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-sm font-semibold text-amber-800 dark:text-amber-300 transition-colors mt-4"
+            >
+              <ShieldAlert size={18} />
+              <span>Consola Velyon Admin</span>
+            </Link>
+          )
         )}
       </nav>
 
       {/* User Footer Profile & Logout Button */}
-      <div className="mt-auto space-y-3 pt-4 border-t">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-2xs">
+      <div className="mt-auto pt-4 border-t">
+        {isCollapsed ? (
+          <div className="flex flex-col items-center gap-3">
+            <div
+              className="flex size-9 items-center justify-center rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-2xs"
+              title={user?.full_name || "Usuario Clínico"}
+            >
               {user?.full_name ? user.full_name[0] : "A"}
             </div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-foreground truncate">
-                {user?.full_name || (isDemo ? "Lic. Alejandro Mendoza V." : "Usuario Clínico")}
-              </p>
-              <span className="block text-[10px] text-muted-foreground truncate">
-                {isDemo
-                  ? "Terapeuta Demo"
-                  : isSuperAdmin
-                  ? "Admin Velyon"
-                  : user?.specialty || "Psicólogo Titular"}
-              </span>
-            </div>
+            <button
+              onClick={handleLogout}
+              title={isDemo ? "Salir de la demo" : "Cerrar sesión"}
+              className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-2xs">
+                {user?.full_name ? user.full_name[0] : "A"}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-foreground truncate">
+                  {user?.full_name || (isDemo ? "Lic. Alejandro Mendoza V." : "Usuario Clínico")}
+                </p>
+                <span className="block text-[10px] text-muted-foreground truncate">
+                  {isDemo
+                    ? "Terapeuta Demo"
+                    : isSuperAdmin
+                    ? "Admin Velyon"
+                    : user?.specialty || "Psicólogo Titular"}
+                </span>
+              </div>
+            </div>
 
-          <button
-            onClick={handleLogout}
-            title={isDemo ? "Salir de la demo" : "Cerrar sesión"}
-            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
-          >
-            <LogOut size={16} />
-          </button>
-        </div>
+            <button
+              onClick={handleLogout}
+              title={isDemo ? "Salir de la demo" : "Cerrar sesión"}
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );

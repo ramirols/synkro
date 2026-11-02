@@ -18,8 +18,10 @@ export interface PlanLimits {
   maxPatients: number | null;
   /** Cantidad máxima de psicólogos / profesionales activos en la organización */
   maxProfessionals: number;
-  /** Capacidad de generar notas clínicas SOAP asistidas por IA */
-  hasAiSoap: boolean;
+  /** Estructura de notas clínicas SOAP profesional */
+  hasSoapNotes: boolean;
+  /** Compatibilidad heredada */
+  hasAiSoap?: boolean;
   /** Doble capa de notas privadas del terapeuta (segregadas de la historia general) */
   hasPrivateNotes: boolean;
   /** Bóveda de archivos documentales clínicos con visor in-app */
@@ -62,6 +64,7 @@ export const PLANS_CONFIG: Record<SubscriptionPlan, PlanConfig> = {
     limits: {
       maxPatients: 5,
       maxProfessionals: 1,
+      hasSoapNotes: true,
       hasAiSoap: false,
       hasPrivateNotes: false,
       hasFileVault: false,
@@ -94,6 +97,7 @@ export const PLANS_CONFIG: Record<SubscriptionPlan, PlanConfig> = {
     limits: {
       maxPatients: 20,
       maxProfessionals: 1,
+      hasSoapNotes: true,
       hasAiSoap: false,
       hasPrivateNotes: false,
       hasFileVault: false,
@@ -120,13 +124,14 @@ export const PLANS_CONFIG: Record<SubscriptionPlan, PlanConfig> = {
     currency: "PEN",
     currencySymbol: "S/",
     billingPeriodLabel: "/ mes (PEN)",
-    tagline: "Para terapeutas consolidados que buscan automatizar notas y escalar su consulta.",
+    tagline: "Para terapeutas consolidados que buscan estructurar notas SOAP y escalar su consulta.",
     targetAudience: "Terapeutas con consulta privada consolidada",
     recommended: true,
     limits: {
       maxPatients: null, // Ilimitados
       maxProfessionals: 1,
-      hasAiSoap: true,
+      hasSoapNotes: true,
+      hasAiSoap: false,
       hasPrivateNotes: true,
       hasFileVault: true,
       hasPhysicalBoxes: false,
@@ -136,7 +141,7 @@ export const PLANS_CONFIG: Record<SubscriptionPlan, PlanConfig> = {
     features: [
       "Pacientes Ilimitados",
       "1 profesional titular",
-      "Notas SOAP con Inteligencia Artificial",
+      "Notas clínicas estructuradas SOAP profesionales",
       "Doble capa de notas privadas del terapeuta",
       "Bóveda de archivos con visor in-app",
       "Telepsicología con Google Meet integrado",
@@ -158,7 +163,8 @@ export const PLANS_CONFIG: Record<SubscriptionPlan, PlanConfig> = {
     limits: {
       maxPatients: null, // Ilimitados
       maxProfessionals: 10,
-      hasAiSoap: true,
+      hasSoapNotes: true,
+      hasAiSoap: false,
       hasPrivateNotes: true,
       hasFileVault: true,
       hasPhysicalBoxes: true,

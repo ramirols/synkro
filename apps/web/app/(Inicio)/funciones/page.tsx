@@ -5,10 +5,10 @@ import PublicFooter from "@/components/inicio/public-footer";
 
 export const metadata = {
   title: "Funciones Clínicas Especializadas para Psicólogos | Synkro",
-  description: "Descubre las herramientas de Synkro: historias clínicas, notas SOAP asistidas por IA, agenda tipo horario semanal, bóveda psicométrica y portal para pacientes.",
+  description: "Descubre las herramientas de Synkro: historias clínicas, notas SOAP estructuradas con plantillas basadas en evidencia, agenda tipo horario semanal, bóveda psicométrica y portal para pacientes.",
   keywords: [
     "funciones software psicologos",
-    "notas soap psicologia inteligencia artificial",
+    "notas soap psicologia plantillas clinicas",
     "historia clinica digital psicologia peru",
     "agenda tipo horario semanal para terapeutas",
     "boveda pruebas psicometricas inventario beck",
@@ -54,9 +54,9 @@ export default function FuncionesPage() {
               <div className="flex size-11 items-center justify-center rounded-2xl bg-secondary text-primary">
                 <Brain size={22} />
               </div>
-              <h3 className="text-base font-bold text-foreground">Asistencia con IA Clínica</h3>
+              <h3 className="text-base font-bold text-foreground">Plantillas SOAP Estructuradas</h3>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Redacta el informe SOAP en segundos a partir de los puntos clave tratados durante la sesión terapéutica.
+                Modelos clínicos basados en evidencia (TCC, ACT, Evaluación) para redactar notas SOAP rigurosas y ordenadas en minutos.
               </p>
             </div>
 

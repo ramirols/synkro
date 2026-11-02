@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s | Synkro by Velyon",
   },
   description:
-    "El software clínico N°1 para psicólogos y centros de psicología en Perú y Latinoamérica. Historias clínicas digitales, notas SOAP con IA, agenda tipo horario semanal, bóveda de pruebas psicométricas y portal seguro para pacientes. Pagos directos con Yape, Plin y tarjetas de crédito/débito.",
+    "El software clínico N°1 para psicólogos y centros de psicología en Perú y Latinoamérica. Historias clínicas digitales, notas SOAP estructuradas, agenda tipo horario semanal, bóveda de pruebas psicométricas y portal seguro para pacientes. Pagos directos con Yape, Plin y tarjetas de crédito/débito.",
   keywords: [
     "software para psicólogos",
     "software para psicologos peru",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Synkro | Software Clínico para Psicólogos & Centros de Salud Mental",
     description:
-      "Moderniza tu práctica psicológica. Historias clínicas, notas SOAP con IA, horario semanal y portal seguro para tus pacientes. Pagos por Yape y tarjetas.",
+      "Moderniza tu práctica psicológica. Historias clínicas, notas SOAP estructuradas, horario semanal y portal seguro para tus pacientes. Pagos por Yape y tarjetas.",
     url: "https://synkro.velyonsoft.com",
     siteName: "Synkro",
     locale: "es_PE",
@@ -91,7 +91,7 @@ const jsonLd = {
       name: "Plan Professional",
       price: "89.00",
       priceCurrency: "PEN",
-      description: "Para terapeutas consolidados con pacientes ilimitados, notas SOAP con IA y bóveda de documentos.",
+      description: "Para terapeutas consolidados con pacientes ilimitados, notas SOAP estructuradas y bóveda de documentos.",
     },
     {
       "@type": "Offer",
@@ -107,7 +107,7 @@ const jsonLd = {
     url: "https://www.velyonsoft.com",
   },
   description:
-    "Plataforma integral de gestión clínica, historias digitales y notas SOAP con IA para psicólogos y centros de psicología.",
+    "Plataforma integral de gestión clínica, historias digitales y notas SOAP estructuradas para psicólogos y centros de psicología.",
   aggregateRating: {
     "@type": "AggregateRating",
     ratingValue: "4.9",

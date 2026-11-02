@@ -174,7 +174,7 @@ export default function Home() {
                         : "text-muted-foreground hover:text-foreground"
                       }`}
                   >
-                    Notas SOAP + IA
+                    Notas SOAP
                   </button>
                   <button
                     onClick={() => setActiveTabPreview("portal")}
@@ -283,7 +283,7 @@ export default function Home() {
                       Nota de Evolución Clínica #5 • Camila Valdivia (Ansiedad Generalizada)
                     </span>
                     <span className="rounded-full bg-primary/10 px-2 py-0.5 font-bold text-primary text-[10px]">
-                      Asistido por IA Synkro
+                      Estructura Clínica SOAP
                     </span>
                   </div>
 
@@ -435,10 +435,10 @@ export default function Home() {
                   <Brain size={22} />
                 </div>
                 <h3 className="text-lg font-bold text-foreground">
-                  Notas SOAP con Asistencia IA
+                  Notas SOAP & Plantillas Clínicas
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Estructura tus notas de evolución en segundos. Doble capa para proteger tus notas privadas de contratransferencia de cualquier informe externo.
+                  Estructura tus notas de evolución con plantillas basadas en evidencia. Doble capa para proteger tus notas privadas de contratransferencia de cualquier informe externo.
                 </p>
               </div>
 

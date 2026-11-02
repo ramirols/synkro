@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useClinicalData } from "@/lib/clinical-context";
 import { useSubscription } from "@/lib/subscription-context";
+import { useSidebarLayout } from "@/lib/sidebar-context";
 import {
   LayoutDashboard,
   Users,
@@ -17,32 +17,24 @@ import {
   LogOut,
   Building2,
   CreditCard,
-  Menu,
 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 
 export default function MobileSidebar() {
-  const [open, setOpen] = useState(false);
+  const { isMobileOpen, setIsMobileOpen } = useSidebarLayout();
   const pathname = usePathname();
   const router = useRouter();
   const { logout: authLogout } = useAuth();
   const { basePath, isDemo, user } = useClinicalData();
-  const { subscription, planConfig } = useSubscription();
+  const { subscription, planConfig, isClinic } = useSubscription();
 
   const isSuperAdmin = !isDemo && user?.platform_role === "superadmin";
   const userRole = (user?.role as string) || (isDemo ? "owner" : "owner");
-
-  // Clínica & Equipo SOLO si el plan es "clinic" (más de 1 profesional contratado)
-  const isClinicPlan =
-    subscription?.plan === "clinic" ||
-    (planConfig?.limits?.maxProfessionals ?? 1) > 1;
 
   const rawItems = [
     {
@@ -52,13 +44,13 @@ export default function MobileSidebar() {
       roles: ["owner", "admin", "psychologist", "assistant"],
     },
     {
-      name: "Pacientes",
+      name: isClinic ? "Pacientes del Centro" : "Pacientes",
       href: `${basePath}/pacientes`,
       icon: Users,
       roles: ["owner", "admin", "psychologist", "assistant"],
     },
     {
-      name: "Agenda",
+      name: isClinic ? "Agenda & Boxes" : "Agenda",
       href: `${basePath}/agenda`,
       icon: CalendarDays,
       roles: ["owner", "admin", "psychologist", "assistant"],
@@ -67,7 +59,7 @@ export default function MobileSidebar() {
       name: "Sesiones Clínicas",
       href: `${basePath}/sesiones`,
       icon: Brain,
-      roles: ["owner", "admin", "psychologist"], // Asistentes no acceden a SOAP ni notas privadas
+      roles: ["owner", "admin", "psychologist"],
     },
     {
       name: "Documentos",
@@ -77,9 +69,10 @@ export default function MobileSidebar() {
     },
   ];
 
-  if (isClinicPlan) {
+  // Menú exclusivo de gestión para centros y clínicas
+  if (isClinic) {
     rawItems.push({
-      name: "Clínica & Equipo",
+      name: "Equipo de Psicólogos",
       href: `${basePath}/profesionales`,
       icon: Building2,
       roles: ["owner", "admin", "psychologist"],
@@ -87,7 +80,7 @@ export default function MobileSidebar() {
   }
 
   rawItems.push({
-    name: "Mi Perfil & Clínica",
+    name: isClinic ? "Mi Perfil & Centro" : "Mi Perfil & Consultorio",
     href: `${basePath}/configuracion`,
     icon: Settings,
     roles: ["owner", "admin", "psychologist", "assistant"],
@@ -105,7 +98,7 @@ export default function MobileSidebar() {
   const items = rawItems.filter((i) => i.roles.includes(userRole));
 
   const handleLogout = async () => {
-    setOpen(false);
+    setIsMobileOpen(false);
     if (isDemo) {
       router.push("/iniciar-sesion");
     } else {
@@ -114,28 +107,17 @@ export default function MobileSidebar() {
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="lg:hidden shrink-0 cursor-pointer"
-          aria-label="Abrir menú de navegación"
-        >
-          <Menu size={20} />
-        </Button>
-      } />
-
+    <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
       <SheetContent
         side="left"
-        className="w-72 p-6 flex flex-col justify-between bg-card text-foreground"
+        className="w-72 sm:w-80 p-6 flex flex-col justify-between bg-card text-foreground"
       >
         <div>
           <SheetHeader className="text-left pb-6 border-b">
             <SheetTitle>
               <Link
                 href={basePath || "/dashboard"}
-                onClick={() => setOpen(false)}
+                onClick={() => setIsMobileOpen(false)}
                 className="flex items-center gap-2.5"
               >
                 <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
@@ -153,7 +135,7 @@ export default function MobileSidebar() {
             </SheetTitle>
             <div className="pt-2 flex items-center gap-2">
               <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-primary">
-                {isDemo ? "Modo Demo" : isSuperAdmin ? "Admin" : "Producción"}
+                {isDemo ? "Modo Demo" : isSuperAdmin ? "Admin" : isClinic ? "Centro" : "Independiente"}
               </span>
               <span className="text-[11px] text-muted-foreground truncate">
                 {planConfig?.name || "Starter"}
@@ -173,7 +155,7 @@ export default function MobileSidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setOpen(false)}
+                  onClick={() => setIsMobileOpen(false)}
                   className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all ${
                     isActive
                       ? "bg-secondary text-primary font-semibold shadow-xs"
@@ -189,7 +171,7 @@ export default function MobileSidebar() {
             {isSuperAdmin && (
               <Link
                 href="/admin"
-                onClick={() => setOpen(false)}
+                onClick={() => setIsMobileOpen(false)}
                 className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-sm font-semibold text-amber-800 dark:text-amber-300 transition-colors mt-3"
               >
                 <ShieldAlert size={18} />
@@ -233,4 +215,3 @@ export default function MobileSidebar() {
     </Sheet>
   );
 }
-

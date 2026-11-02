@@ -46,6 +46,8 @@ interface SubscriptionContextType {
   isActive: boolean;
   isPastDue: boolean;
   isExpired: boolean;
+  isClinic: boolean;
+  organizationType: OrganizationType;
   canWrite: boolean;
   refreshSubscription: () => Promise<void>;
   checkPatientLimit: () => { allowed: boolean; current: number; max: number | null; message?: string };
@@ -75,8 +77,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         id: "demo-subscription-id",
         organization_id: "demo-org-1",
         organization_name: "Centro Psicológico Demo",
-        organization_type: "independent",
-        plan: "professional",
+        organization_type: "clinic",
+        plan: "clinic",
         status: "trialing",
         effective_status: "trialing",
         trial_start_at: new Date(Date.now() - 2 * 86400000).toISOString(),
@@ -84,7 +86,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         days_remaining: 12,
         is_active: true,
         patient_count: 6,
-        professional_count: 1,
+        professional_count: 4,
       });
       setLoading(false);
       return;
@@ -138,6 +140,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const status = subscription?.status || "trialing";
   const effectiveStatus = subscription?.effective_status || status;
   const daysRemaining = subscription?.days_remaining ?? 14;
+  const organizationType: OrganizationType =
+    subscription?.organization_type || "independent";
+  const isClinic =
+    organizationType === "clinic" ||
+    plan === "clinic" ||
+    (planConfig?.limits?.maxProfessionals ?? 1) > 1;
 
   const isTrial = effectiveStatus === "trialing";
   const isActive = effectiveStatus === "active";
@@ -190,6 +198,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         isActive,
         isPastDue,
         isExpired,
+        isClinic,
+        organizationType,
         canWrite,
         refreshSubscription: fetchSubscription,
         checkPatientLimit,

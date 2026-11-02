@@ -26,6 +26,22 @@ import {
   ExternalLink,
   Trash2,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const CATEGORY_FILTER_OPTIONS: Record<string, string> = {
+  todos: "Todas las Categorías",
+  evaluation: "Evaluación Psicométrica",
+  consent: "Consentimiento Informado",
+  report: "Informe Clínico",
+  prescription: "Receta / Indicaciones",
+  other: "Otro Documento",
+};
 
 const CATEGORY_MAP: Record<string, { label: string; key: "evaluation" | "consent" | "report" | "prescription" | "other" }> = {
   "Evaluación Psicométrica": { label: "Evaluación Psicométrica", key: "evaluation" },
@@ -293,18 +309,22 @@ export default function DocumentosView() {
           />
         </div>
 
-        <select
+        <Select
+          items={CATEGORY_FILTER_OPTIONS}
           value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="h-10 rounded-xl border bg-background px-3 text-xs font-medium text-foreground outline-none"
+          onValueChange={(val) => val && setSelectedCategory(val)}
         >
-          <option value="todos">Todas las Categorías</option>
-          <option value="evaluation">Evaluación Psicométrica</option>
-          <option value="consent">Consentimiento Informado</option>
-          <option value="report">Informe Clínico</option>
-          <option value="prescription">Receta / Indicaciones</option>
-          <option value="other">Otro Documento</option>
-        </select>
+          <SelectTrigger className="h-10 min-w-44 rounded-xl border bg-background px-3 text-xs font-medium text-foreground">
+            <SelectValue placeholder="Todas las Categorías" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(CATEGORY_FILTER_OPTIONS).map(([val, label]) => (
+              <SelectItem key={val} value={val}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Files Grid */}
@@ -547,18 +567,24 @@ export default function DocumentosView() {
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Paciente Asociado *
                 </label>
-                <select
-                  required
+                <Select
+                  items={Object.fromEntries(
+                    patients.map((p) => [p.id, `${p.first_name} ${p.last_name}`])
+                  )}
                   value={patientId}
-                  onChange={(e) => setPatientId(e.target.value)}
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none"
+                  onValueChange={(val) => val && setPatientId(val)}
                 >
-                  {patients.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.first_name} {p.last_name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="h-10 w-full rounded-xl border bg-background px-3 text-sm">
+                    <SelectValue placeholder="Selecciona un paciente..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {patients.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.first_name} {p.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -579,17 +605,24 @@ export default function DocumentosView() {
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Categoría Clínica *
                 </label>
-                <select
+                <Select
+                  items={Object.fromEntries(
+                    Object.keys(CATEGORY_MAP).map((cat) => [cat, cat])
+                  )}
                   value={categoryLabel}
-                  onChange={(e) => setCategoryLabel(e.target.value)}
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none"
+                  onValueChange={(val) => val && setCategoryLabel(val)}
                 >
-                  {Object.keys(CATEGORY_MAP).map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="h-10 w-full rounded-xl border bg-background px-3 text-sm">
+                    <SelectValue placeholder="Selecciona una categoría..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(CATEGORY_MAP).map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Toggle de Compartición con el Paciente */}

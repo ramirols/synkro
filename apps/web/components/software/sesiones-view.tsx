@@ -23,9 +23,16 @@ import {
   Search,
   BookOpen,
   HelpCircle,
-  Wand2,
   Lock,
 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const CLINICAL_TEMPLATES = [
   {
@@ -74,8 +81,6 @@ function SesionesContent() {
 
   // Mode in Form: SOAP vs Libre
   const [formMode, setFormMode] = useState<"soap" | "libre">("soap");
-  const [showAssistantModal, setShowAssistantModal] = useState(false);
-  const [assistantRawNotes, setAssistantRawNotes] = useState("");
 
   // Form State
   const [patientId, setPatientId] = useState(initialPatientId);
@@ -127,83 +132,7 @@ function SesionesContent() {
     setSoapPlan(tpl.plan);
     setSessionSummary(tpl.summary);
     setFormMode("soap");
-    setShowAssistantModal(false);
-  };
-
-  const handleStructureRawNotesLocally = () => {
-    if (!assistantRawNotes.trim()) return;
-
-    // Asistente estructurador local determinístico:
-    // Separa apuntes libres en cuadrantes SOAP basados en palabras clave clínicas
-    const lines = assistantRawNotes.split("\n").filter((l) => l.trim().length > 0);
-    const sLines: string[] = [];
-    const oLines: string[] = [];
-    const aLines: string[] = [];
-    const pLines: string[] = [];
-
-    lines.forEach((line) => {
-      const lower = line.toLowerCase();
-      if (
-        lower.includes("dice") ||
-        lower.includes("refiere") ||
-        lower.includes("siente") ||
-        lower.includes("manifiesta") ||
-        lower.includes("paciente cuenta") ||
-        lower.includes("motivo") ||
-        lower.includes("suds")
-      ) {
-        sLines.push(line.replace(/^[•\-\*]\s*/, ""));
-      } else if (
-        lower.includes("observa") ||
-        lower.includes("postura") ||
-        lower.includes("contacto visual") ||
-        lower.includes("llanto") ||
-        lower.includes("afecto") ||
-        lower.includes("lenguaje") ||
-        lower.includes("conducta")
-      ) {
-        oLines.push(line.replace(/^[•\-\*]\s*/, ""));
-      } else if (
-        lower.includes("hipótesis") ||
-        lower.includes("hipotesis") ||
-        lower.includes("diagnóstico") ||
-        lower.includes("diagnostico") ||
-        lower.includes("análisis") ||
-        lower.includes("analisis") ||
-        lower.includes("evaluación") ||
-        lower.includes("distorsión") ||
-        lower.includes("esquema")
-      ) {
-        aLines.push(line.replace(/^[•\-\*]\s*/, ""));
-      } else if (
-        lower.includes("plan") ||
-        lower.includes("tarea") ||
-        lower.includes("ejercicio") ||
-        lower.includes("acuerdo") ||
-        lower.includes("próxima") ||
-        lower.includes("proxima") ||
-        lower.includes("objetivo")
-      ) {
-        pLines.push(line.replace(/^[•\-\*]\s*/, ""));
-      } else {
-        // Por defecto, distribuir en el análisis o subjetivo
-        if (sLines.length === 0) sLines.push(line);
-        else aLines.push(line);
-      }
-    });
-
-    setSoapSubjective(sLines.join(". ") || "Paciente expone motivos de la sesión y estado anímico.");
-    setSoapObjective(oLines.join(". ") || "Afecto congruente, colaborador en la sesión.");
-    setSoapAssessment(aLines.join(". ") || "Evolución acorde a los objetivos planteados.");
-    setSoapPlan(pLines.join(". ") || "Mantener pautas acordadas y tareas de autorregistro.");
-
-    // Resumen unificado
-    setSessionSummary(
-      `S: ${sLines.join(" ") || "Reporte subjetivo recogido."}\nO: ${oLines.join(" ") || "Observación clínica estándar."}\nA: ${aLines.join(" ") || "Evaluación clínica en progreso."}\nP: ${pLines.join(" ") || "Continuidad del plan terapéutico."}`
-    );
-
-    setFormMode("soap");
-    setShowAssistantModal(false);
+    toast.info(`Plantilla "${tpl.name}" aplicada al formato SOAP.`);
   };
 
   const handleCreateSession = async (e: React.FormEvent) => {
@@ -325,18 +254,28 @@ function SesionesContent() {
         <div className="flex items-center gap-2">
           <User size={16} className="text-primary" />
           <span className="text-xs font-semibold text-foreground">Filtrar por Paciente:</span>
-          <select
+          <Select
+            items={Object.fromEntries([
+              ["todos", `Todos los Pacientes (${sessions.length} sesiones)`],
+              ...patients.map((p) => [p.id, `${p.first_name} ${p.last_name}`]),
+            ])}
             value={filterPatientId}
-            onChange={(e) => setFilterPatientId(e.target.value)}
-            className="h-9 rounded-xl border bg-background px-3 text-xs font-medium text-foreground outline-none"
+            onValueChange={(val) => val && setFilterPatientId(val)}
           >
-            <option value="todos">Todos los Pacientes ({sessions.length} sesiones)</option>
-            {patients.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.first_name} {p.last_name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-9 min-w-52 rounded-xl border bg-background px-3 text-xs font-medium text-foreground">
+              <SelectValue placeholder="Todos los Pacientes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">
+                Todos los Pacientes ({sessions.length} sesiones)
+              </SelectItem>
+              {patients.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.first_name} {p.last_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -518,98 +457,6 @@ function SesionesContent() {
         )}
       </div>
 
-      {/* Modal: Asistente SOAP Honesto */}
-      {showAssistantModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-3xl border bg-card p-6 shadow-2xl my-8 space-y-5">
-            <div className="flex items-center justify-between border-b pb-3">
-              <div className="flex items-center gap-2">
-                <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Wand2 size={16} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-foreground">
-                    Asistente Local de Redacción Clínica SOAP
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Estructuración guiada y plantillas basadas en evidencia.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowAssistantModal(false)}
-                className="rounded-full p-2 text-muted-foreground hover:bg-muted"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Aviso de Transparencia e Inteligencia Honesta */}
-            <div className="rounded-2xl border border-primary/20 bg-secondary/30 p-3.5 text-xs space-y-1.5">
-              <div className="flex items-center gap-1.5 font-bold text-primary">
-                <Shield size={14} /> Asistente de Redacción Local & Privado
-              </div>
-              <p className="text-muted-foreground text-[11px] leading-relaxed">
-                Este módulo procesa los textos <strong>exclusivamente en tu dispositivo</strong> y no envía datos clínicos ni notas confidenciales a modelos de IA de terceros. Todos los borradores generados requieren revisión, adaptación y aprobación explícita del terapeuta antes de guardarse en el expediente.
-              </p>
-            </div>
-
-            {/* Plantillas Rápidas */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-foreground">
-                Opción A: Cargar Plantilla Clínica Predefinida
-              </span>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {CLINICAL_TEMPLATES.map((tpl, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => handleApplyTemplate(tpl)}
-                    className="flex flex-col text-left p-3 rounded-xl border border-border/70 bg-card hover:border-primary/50 hover:bg-secondary/40 transition-all text-xs space-y-1"
-                  >
-                    <span className="font-bold text-foreground">{tpl.name}</span>
-                    <span className="text-[10px] text-muted-foreground line-clamp-2">
-                      {tpl.description}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Estructurador de Apuntes Rápidos */}
-            <div className="space-y-2 pt-2 border-t">
-              <label className="text-xs font-bold text-foreground block">
-                Opción B: Pegar Apuntes Libres para Clasificación SOAP
-              </label>
-              <textarea
-                rows={4}
-                value={assistantRawNotes}
-                onChange={(e) => setAssistantRawNotes(e.target.value)}
-                placeholder="Pega notas tomadas durante la sesión (ej. 'Paciente refiere menos ansiedad laboral. Contacto visual sostenido. Hipótesis: menor conducta de evitación. Tarea: autorregistro semanal')..."
-                className="w-full rounded-xl border bg-background p-3 text-xs leading-relaxed outline-none focus:ring-2 focus:ring-primary/20"
-              />
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAssistantModal(false)}
-                  className="rounded-xl border px-3.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleStructureRawNotesLocally}
-                  disabled={!assistantRawNotes.trim()}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50 shadow-xs"
-                >
-                  <Wand2 size={13} />
-                  <span>Estructurar en SOAP</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal: Registrar Sesión */}
       {isModalOpen && (
@@ -644,18 +491,27 @@ function SesionesContent() {
                   <label className="mb-1.5 block text-xs font-semibold text-foreground">
                     Paciente *
                   </label>
-                  <select
-                    required
+                  <Select
+                    items={Object.fromEntries(
+                      patients.map((p) => [
+                        p.id,
+                        `${p.first_name} ${p.last_name} (${p.therapeutic_approach || "TCC"})`,
+                      ])
+                    )}
                     value={patientId}
-                    onChange={(e) => setPatientId(e.target.value)}
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none"
+                    onValueChange={(val) => val && setPatientId(val)}
                   >
-                    {patients.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.first_name} {p.last_name} ({p.therapeutic_approach || "TCC"})
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="h-10 w-full rounded-xl border bg-background px-3 text-sm">
+                      <SelectValue placeholder="Selecciona un paciente..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {patients.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.first_name} {p.last_name} ({p.therapeutic_approach || "TCC"})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -695,12 +551,12 @@ function SesionesContent() {
               </div>
 
               {/* Selector de Modo de Redacción */}
-              <div className="flex items-center justify-between border-y py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-y py-3">
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setFormMode("soap")}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-colors ${formMode === "soap"
+                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer ${formMode === "soap"
                       ? "bg-primary text-primary-foreground shadow-xs"
                       : "border text-muted-foreground hover:bg-muted"
                       }`}
@@ -710,7 +566,7 @@ function SesionesContent() {
                   <button
                     type="button"
                     onClick={() => setFormMode("libre")}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-colors ${formMode === "libre"
+                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer ${formMode === "libre"
                       ? "bg-primary text-primary-foreground shadow-xs"
                       : "border text-muted-foreground hover:bg-muted"
                       }`}
@@ -718,20 +574,34 @@ function SesionesContent() {
                     Texto Libre / Resumen
                   </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowAssistantModal(true)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Wand2 size={13} />
-                  <span>Asistente SOAP / Plantillas</span>
-                </button>
               </div>
 
               {/* Formato SOAP */}
               {formMode === "soap" ? (
                 <div className="space-y-4">
+                  {/* Barra de Plantillas Clínicas Rápidas */}
+                  <div className="rounded-2xl border border-primary/20 bg-secondary/30 p-3.5 space-y-2">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                      <BookOpen size={14} className="text-primary" />
+                      <span>Plantillas Clínicas Basadas en Evidencia</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Selecciona una plantilla para rellenar los 4 cuadrantes con un marco de trabajo clínico editable:
+                    </p>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {CLINICAL_TEMPLATES.map((tpl, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => handleApplyTemplate(tpl)}
+                          className="rounded-xl border border-input bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all shadow-2xs cursor-pointer"
+                          title={tpl.description}
+                        >
+                          {tpl.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <label className="mb-1 block text-xs font-bold text-foreground">
