@@ -1,28 +1,53 @@
-# Synkro by VelyonSoft
+# Synkro by VelyonSoft — Clinical SaaS for Psychologists & Clinics
 
-> Synkro es el SaaS de gestión clínica integral diseñado para psicólogos independientes, consultorios privados y centros psicológicos en Perú y Latinoamérica.
+> Synkro es la plataforma SaaS de gestión clínica integral diseñada específicamente para psicólogos independientes, consultorios privados y centros o clínicas psicológicas en el Perú y Latinoamérica. Desarrollado con los más altos estándares de secreto profesional (Ley N° 28369 C.Ps.P.) y protección de datos personales (Ley N° 29733).
 
 ## Resumen Ejecutivo
-- Empresa desarrolladora: VelyonSoft (Perú).
-- Stack tecnológico: Next.js 16 (App Router), React 19, TypeScript estricto, Tailwind CSS 4, Supabase (PostgreSQL 15, Auth, RLS y Storage).
-- Arquitectura desacoplada: Servicios clínicos orientados a interfaz (IClinicalDataService), desacoplando el modo Demostración en memoria del modo Producción multi-tenant con Supabase.
-- Modelo de prueba y suscripción: 14 días de prueba gratuita sin tarjeta de crédito. Planes: Individual (S/ 79 / $22 mes) y Clínica (S/ 189 / $49 mes). Métodos de activación transparente: Yape oficial (997 676 432), transferencia bancaria BCP y confirmación vía WhatsApp.
+- **Producto:** Synkro
+- **Propietario y Desarrollador:** VelyonSoft (Perú).
+- **Sitio Web Oficial:** https://synkro.velyonsoft.com
+- **WhatsApp Comercial Oficial:** +51 997 676 432
+- **Stack Tecnológico:** Monorepo pnpm, Next.js 16 (App Router con Turbopack), React 19, TypeScript estricto, Tailwind CSS 4, Supabase (PostgreSQL 15, Auth, Row Level Security estricto y Storage cifrado).
+- **Arquitectura de Datos:** Arquitectura desacoplada mediante `IClinicalDataService` con implementación en memoria para demostración comercial inmediata (`DemoClinicalDataService` en `/demo`) y backend transaccional multi-tenant en producción (`ProductionClinicalDataService`).
+- **Modalidades de Cuenta:**
+  - *Psicólogo Independiente:* Optimizado para práctica privada individual, 1 terapeuta titular, agenda personal y fichas clínicas directas.
+  - *Centro o Clínica:* Diseñado para equipos multidisciplinarios de hasta 10 profesionales, asignación de consultorios físicos (boxes), triage y derivaciones internas entre especialistas.
 
-## Módulos Principales
-1. Expediente Clínico y Gestión de Pacientes: Historias clínicas estructuradas, motivos de consulta, datos de encuadre, contactos de emergencia y asignación por profesional.
-2. Notas de Sesión con Doble Capa de Confidencialidad: Separación física en base de datos entre el resumen de evolución (session_summary) y las notas privadas del terapeuta (session_private_notes), protegidas por RLS estricto y encriptación.
-3. Agenda y Citas: Programación de sesiones presenciales y virtuales con integración directa de enlaces Meet/Zoom y sincronización de estados.
-4. Bóveda Documental Cifrada: Carga segura de evaluaciones psicométricas, consentimientos informados y reportes clínicos (hasta 15 MB) con generación de URLs firmadas temporales (15 minutos).
-5. Portal del Paciente: Acceso individual blindado para pacientes mediante token criptográfico de activación única, permitiéndoles consultar sus citas programadas y documentos autorizados sin exponer información sensible.
-6. Demostración Interactiva Comercial: Entorno aislado en /demo con datos clínicos representativos y operaciones de escritura desactivadas para exploración inmediata sin fricción.
-7. Consola Superadmin VelyonSoft: Panel administrativo en /admin para métricas comerciales agregadas, control de suscripciones y renovación de licencias, sin acceso a historias ni notas confidenciales de pacientes (cumplimiento Ley 29733 de Protección de Datos Personales).
+## Planes y Modelo Comercial Transparente
+- **14 Días de Prueba Gratuita:** Acceso completo e inmediato sin necesidad de ingresar tarjeta de crédito ni compromisos de permanencia.
+- **Plan Gratuito (Free):** S/ 0 / mes. Hasta 5 pacientes activos, 1 profesional titular, horario semanal interactivo, notas de evolución estándar y portal seguro del paciente.
+- **Plan Starter:** S/ 49 / mes (PEN). Hasta 20 pacientes activos, 1 profesional titular, horario semanal, notas estructuradas, portal del paciente y soporte por WhatsApp.
+- **Plan Professional:** S/ 89 / mes (PEN). Pacientes ilimitados, 1 profesional titular, notas clínicas estructuradas SOAP completas con plantillas basadas en evidencia (TCC, ACT, Evaluación), bóveda documental de pruebas psicométricas y portal del paciente.
+- **Plan Empresa / Clínica:** S/ 189 / mes (PEN). Hasta 10 psicólogos en equipo, pacientes ilimitados, gestión y reserva de consultorios físicos (boxes), triage y derivaciones internas entre terapeutas, supervisión clínica ética y soporte prioritario.
+- **Activación Transparente sin Cobros Fantasma:** Activación directa y segura en Perú mediante **Yape oficial (997 676 432)** y **Transferencia Bancaria BCP**, con confirmación administrativa por WhatsApp.
+- **Política de Continuidad Clínica:** Si una suscripción expira, el acceso de escritura se pausa pero la consulta y exportación de expedientes históricos permanece 100% disponible para el terapeuta garantizando la custodia del expediente.
 
-## Enlaces Oficiales
-- Sitio web principal: https://synkro.velyonsoft.com
-- Para psicólogos independientes: https://synkro.velyonsoft.com/psicologos
-- Para centros y clínicas: https://synkro.velyonsoft.com/centros-psicologicos
-- Planes y Precios: https://synkro.velyonsoft.com/precios
-- Demo interactiva: https://synkro.velyonsoft.com/demo
-- Registro gratuito: https://synkro.velyonsoft.com/registrarse
-- Contacto directo / Soporte comercial WhatsApp: +51 997 676 432
+## Módulos Clínicos y Funcionalidades
+1. **Expediente Clínico & Anamnesis:** Historias clínicas digitales con consentimiento informado, motivo de consulta, contacto de emergencia y enfoque terapéutico.
+2. **Doble Capa de Notas Clínicas (Secreto Profesional):**
+   - *Capa Oficial (SOAP):* Subjetivo, Objetivo, Análisis y Plan terapéutico formal, compartible y exportable para informes. Incluye plantillas clínicas basadas en evidencia (TCC, ACT, Psicoeducación Inicial).
+   - *Capa Privada Confidencial:* Notas personales de contratransferencia e hipótesis privadas almacenadas en tabla aislada con RLS exclusivo por autor (`author_id = auth.uid()`). Invisibles para otros terapeutas, recepcionistas, superadministradores o pacientes.
+3. **Agenda & Horario Semanal:** Matriz visual interactiva de Lunes a Domingo de 08:00 a 20:00, con diferenciación de modalidad (presencial con asignación de box físico vs. virtual con Google Meet).
+4. **Bóveda Psicométrica Cifrada:** Almacenamiento seguro de inventarios psicológicos (Beck BAI/BDI, STAI, Hamilton, informes periciales) con previsualización web y generación de URLs firmadas temporales con expiración criptográfica (15 minutos).
+5. **Portal Seguro del Paciente:** Acceso directo del paciente activado mediante enlace seguro con token criptográfico (SHA-256), donde puede revisar sus citas, enlace a Google Meet y documentos compartidos expresamente por su terapeuta.
+6. **Gestión de Centro & Triage Interno:** Gestión de hasta 10 psicólogos en equipo, supervisión clínica, derivación formal de casos entre colegas con handover clínico estructurado y control de boxes.
+7. **Consola Superadmin:** Panel administrativo en `/admin` con visualización agregada de métricas comerciales y gestión de suscripciones, blindado por RLS para que ningún administrador acceda a datos de salud de los pacientes (cumplimiento Ley 29733).
 
+## Marco Legal y Cumplimiento Normativo (Perú)
+- **Ley N° 28369 (Ley del Trabajo del Psicólogo):** Garantiza el estricto cumplimiento del secreto profesional y la autonomía técnica en la documentación clínica.
+- **Ley N° 29733 (Ley de Protección de Datos Personales):** Medidas técnicas y organizativas de seguridad para el tratamiento de datos sensibles de salud. Aislamiento multi-tenant absoluto a nivel de base de datos vía PostgreSQL Row Level Security.
+- **Ley N° 29571 (Código de Protección al Consumidor):** Libro de Reclamaciones Virtual interactivo a disposición de todos los usuarios en https://synkro.velyonsoft.com/libro-de-reclamaciones.
+
+## Directorio de Enlaces
+- Página Principal: https://synkro.velyonsoft.com
+- Para Psicólogos Independientes: https://synkro.velyonsoft.com/psicologos
+- Para Centros & Clínicas: https://synkro.velyonsoft.com/centros-psicologicos
+- Funciones Clínicas: https://synkro.velyonsoft.com/funciones
+- Planes & Precios (Yape/BCP): https://synkro.velyonsoft.com/precios
+- Seguridad & Cumplimiento C.Ps.P.: https://synkro.velyonsoft.com/seguridad
+- Demostración Interactiva en Vivo: https://synkro.velyonsoft.com/demo
+- Registro Gratuito: https://synkro.velyonsoft.com/registrarse
+- Iniciar Sesión: https://synkro.velyonsoft.com/iniciar-sesion
+- Política de Privacidad: https://synkro.velyonsoft.com/privacidad
+- Términos y Condiciones: https://synkro.velyonsoft.com/terminos
+- Libro de Reclamaciones: https://synkro.velyonsoft.com/libro-de-reclamaciones

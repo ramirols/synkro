@@ -8,7 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: `${baseUrl}`,
       lastModified,
-      changeFrequency: "weekly",
+      changeFrequency: "daily",
       priority: 1.0,
     },
     {
@@ -24,22 +24,64 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/funciones`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/precios`,
       lastModified,
       changeFrequency: "weekly",
-      priority: 0.8,
+      priority: 0.9,
     },
     {
-      url: `${baseUrl}/demo`,
+      url: `${baseUrl}/seguridad`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/privacidad`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
-      url: `${baseUrl}/portal-paciente`,
+      url: `${baseUrl}/terminos`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/libro-de-reclamaciones`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/demo`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/portal-paciente`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/portal-paciente/activar`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/registrarse`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/iniciar-sesion`,
@@ -48,11 +90,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
     },
     {
-      url: `${baseUrl}/registrarse`,
+      url: `${baseUrl}/recuperar-contrasena`,
       lastModified,
-      changeFrequency: "weekly",
-      priority: 0.8,
+      changeFrequency: "yearly",
+      priority: 0.4,
     },
   ];
 }
-

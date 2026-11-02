@@ -1,0 +1,82 @@
+# Synkro by VelyonSoft — Comprehensive Technical & Clinical Architecture
+
+Este documento detalla la arquitectura técnica, modelo de datos, políticas de seguridad y flujos funcionales de Synkro para consumo por modelos de lenguaje (LLMs) y sistemas de búsqueda indexada.
+
+## 1. Identificación y Propiedad
+- **Nombre comercial:** Synkro
+- **Empresa matriz:** VelyonSoft (Perú)
+- **URL Canónica:** https://synkro.velyonsoft.com
+- **Soporte Comercial Oficial:** WhatsApp +51 997 676 432
+- **Propósito:** Software SaaS especializado en gestión clínica para psicólogos independientes y centros psicológicos en el Perú y Latinoamérica.
+
+## 2. Stack Tecnológico & Arquitectura
+- **Gestor de Monorepo:** pnpm workspace
+- **Framework Frontend:** Next.js 16 (App Router con Turbopack)
+- **Biblioteca de Interfaz:** React 19 (Server & Client Components)
+- **Lenguaje:** TypeScript 5+ con modo estricto habilitado
+- **Estilos:** Tailwind CSS 4 con variables de diseño personalizadas y soporte de modo claro/oscuro
+- **Componentes UI:** Shadcn UI basado en Radix / Base-UI primitives
+- **Motor de Base de Datos:** Supabase con PostgreSQL 15, Auth (GoTrue), Row Level Security (RLS) y Storage cifrado
+- **Tipografía:** Manrope Variable font
+
+## 3. Arquitectura de Servicios Clínicos
+La interacción con los datos está desacoplada mediante la interfaz `IClinicalDataService`:
+```typescript
+interface IClinicalDataService {
+  getPatients(): Promise<Patient[]>;
+  getPatientById(id: string): Promise<Patient | null>;
+  createPatient(patient: Omit<Patient, "id" | "created_at" | "organization_id">): Promise<Patient>;
+  updatePatient?(id: string, updates: Partial<Patient>): Promise<Patient>;
+  deletePatient?(id: string): Promise<void>;
+  getAppointments(): Promise<Appointment[]>;
+  createAppointment(app: Omit<Appointment, "id" | "created_at" | "organization_id" | "professional_id">): Promise<Appointment>;
+  updateAppointmentStatus(appId: string, newStatus: string): Promise<void>;
+  getSessions(): Promise<Session[]>;
+  createSession(sess: Omit<Session, "id" | "created_at" | "professional_id">): Promise<Session>;
+  getFiles(patientId?: string): Promise<PatientFile[]>;
+  createFile(file: Omit<PatientFile, "id" | "created_at">): Promise<PatientFile>;
+  uploadFile?(file: File, patientId: string, category: string, sharedWithPatient: boolean): Promise<PatientFile>;
+  getFileSignedUrl?(storagePath: string): Promise<string>;
+  deleteFile?(id: string, storagePath?: string): Promise<void>;
+  createPatientPortalInvitation?(patientId: string): Promise<{ token: string; expires_at: string; invitation_url: string }>;
+  acceptPatientPortalInvitation?(token: string): Promise<{ patient_id: string; organization_id: string }>;
+  revokePatientPortalAccess?(patientId: string): Promise<void>;
+  getDashboardSummary(): Promise<DashboardSummary>;
+}
+```
+- **DemoClinicalDataService:** Opera 100% en memoria del navegador utilizando `localStorage`, permitiendo que evaluadores comerciales prueben todas las vistas sin interactuar con Supabase ni requerir credenciales de red. Las operaciones de mutación están bloqueadas en demo con un modal informativo y enlace a registro gratuito.
+- **ProductionClinicalDataService:** Conecta con Supabase utilizando tokens de sesión autenticados y ejecuta transacciones protegidas por RLS.
+
+## 4. Esquema Relacional de Base de Datos (PostgreSQL)
+1. **organizations:** `id (uuid pk)`, `name (text)`, `slug (text unique)`, `organization_type ('independent' | 'clinic')`, `created_at (timestamptz)`.
+2. **profiles:** `id (uuid pk -> auth.users)`, `full_name (text)`, `role ('owner' | 'admin' | 'psychologist' | 'assistant' | 'patient')`, `platform_role ('user' | 'superadmin')`, `phone (text)`, `specialty (text)`, `license_number (text)`, `bio (text)`.
+3. **organization_members:** `id (uuid pk)`, `organization_id (uuid -> organizations)`, `user_id (uuid -> profiles)`, `role (text)`. Clave única `(organization_id, user_id)`.
+4. **professionals:** `id (uuid pk)`, `organization_id (uuid -> organizations)`, `profile_id (uuid -> profiles)`, `specialty (text)`, `license_number (text)`, `bio (text)`.
+5. **patients:** `id (uuid pk)`, `organization_id (uuid -> organizations)`, `first_name (text)`, `last_name (text)`, `email (text)`, `phone (text)`, `birth_date (date)`, `status ('activo' | 'inactivo' | 'alta' | 'evaluacion')`, `therapeutic_approach (text)`, `portal_status ('not_invited' | 'invited' | 'active' | 'revoked')`, `portal_token_hash (text)`.
+6. **appointments:** `id (uuid pk)`, `organization_id (uuid -> organizations)`, `patient_id (uuid -> patients)`, `professional_id (uuid -> professionals)`, `appointment_date (date)`, `start_time (time)`, `end_time (time)`, `status ('scheduled' | 'completed' | 'cancelled' | 'no_show')`, `modality ('presencial' | 'virtual')`, `meeting_link (text)`.
+7. **sessions:** `id (uuid pk)`, `patient_id (uuid -> patients)`, `professional_id (uuid -> professionals)`, `session_summary (text)`, `soap_subjective (text)`, `soap_objective (text)`, `soap_assessment (text)`, `soap_plan (text)`, `emotional_score (int)`, `homework (text)`.
+8. **session_private_notes:** `session_id (uuid pk -> sessions)`, `organization_id (uuid -> organizations)`, `author_id (uuid -> profiles)`, `private_notes (text)`, `created_at (timestamptz)`.
+9. **patient_files:** `id (uuid pk)`, `organization_id (uuid -> organizations)`, `patient_id (uuid -> patients)`, `file_name (text)`, `storage_path (text)`, `file_category (text)`, `shared_with_patient (boolean)`.
+10. **subscriptions:** `id (uuid pk)`, `organization_id (uuid -> organizations unique)`, `plan ('free' | 'starter' | 'professional' | 'clinic')`, `status ('trialing' | 'active' | 'past_due' | 'expired' | 'cancelled')`, `trial_start_at (timestamptz)`, `trial_end_at (timestamptz)`, `current_period_end (timestamptz)`.
+11. **subscription_payments:** `id (uuid pk)`, `subscription_id (uuid -> subscriptions)`, `amount (numeric)`, `currency ('PEN' | 'USD')`, `payment_method (text)`, `proof_url (text)`, `created_at (timestamptz)`.
+
+## 5. Matriz de Seguridad y Row Level Security (RLS)
+- **Aislamiento Multi-Tenant:** La función de seguridad `public.is_member_of(organization_id)` restringe el acceso de lectura y escritura para que ningún usuario pueda consultar registros pertenecientes a otra clínica o consultorio.
+- **Doble Capa de Notas y Secreto Profesional:** La tabla `session_private_notes` posee la política `FOR ALL USING (author_id = auth.uid())`. Ni siquiera los colegas terapeutas del mismo centro, ni los recepcionistas, ni los pacientes, ni el superadministrador pueden leer el contenido de reflexiones y contratransferencia del autor.
+- **Bóveda Documental:** Los pacientes con cuenta activa en su portal únicamente pueden visualizar documentos que tengan la bandera `shared_with_patient = true`.
+- **Aislamiento de Superadministrador:** El rol `superadmin` está bloqueado por RLS de ejecutar `SELECT` sobre tablas con datos de salud (historias clínicas, sesiones, expedientes y notas privadas), preservando el mandato de la Ley N° 29733 de Protección de Datos Personales. El superadmin solo visualiza métricas cuantitativas agregadas y gestión de suscripciones mediante funciones RPC seguras (`SECURITY DEFINER`).
+
+## 6. Modelo de Precios y Pagos en Perú
+| Plan | Precio Mensual | Límite Pacientes | Profesionales | Características Clave |
+| :--- | :--- | :--- | :--- | :--- |
+| **Gratuito (Free)** | S/ 0 | 5 | 1 titular | Horario semanal, notas estándar, portal paciente |
+| **Starter** | S/ 49 | 20 | 1 titular | Horario semanal, notas estructuradas, portal paciente, WhatsApp |
+| **Professional** | S/ 89 | Ilimitados | 1 titular | Notas SOAP con plantillas clínicas, bóveda psicométrica |
+| **Empresa / Clínica** | S/ 189 | Ilimitados | Hasta 10 | Triage/derivaciones, boxes físicos, supervisión clínica |
+
+## 7. Canales Legales y Contacto
+- Soporte WhatsApp: +51 997 676 432
+- Correo Electrónico: contacto@velyonsoft.com
+- Libro de Reclamaciones: https://synkro.velyonsoft.com/libro-de-reclamaciones
+- Sede: Lima, Perú
+
