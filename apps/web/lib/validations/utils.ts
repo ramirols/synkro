@@ -37,3 +37,4 @@ export function validateForm<T>(
 
   return { success: false, errors, firstError };
 }
+

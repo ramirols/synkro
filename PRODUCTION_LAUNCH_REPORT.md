@@ -193,3 +193,4 @@ Aunque el sistema se encuentra completamente operativo para registro e inicio de
 
 > ### **A. PRODUCCIÓN DESPLEGADA Y VERIFICADA**
 > **Synkro está formalmente desplegado, configurado en Supabase Cloud, protegido por RLS multi-tenant y listo para recibir clientes reales en https://synkro.velyonsoft.com.**
+
