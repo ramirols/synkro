@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -14,18 +14,27 @@ import {
   ArrowLeft,
   Eye,
   EyeOff,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { loginSchema, validateForm } from "@/lib/validations";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Detectar mensajes de confirmación provenientes de otras pantallas
+  const passwordUpdated = searchParams.get("password_updated") === "true";
+  const verified = searchParams.get("verified") === "true";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,13 +67,25 @@ export default function LoginPage() {
       console.error("Login error:", err);
       const msg = err.message || "";
       let userFriendly = "Error al iniciar sesión. Intenta nuevamente.";
+
       if (msg.includes("Invalid login credentials") || msg.includes("invalid_credentials")) {
         userFriendly = "Credenciales incorrectas. Verifica tu correo y contraseña.";
+      } else if (msg.includes("Email logins are disabled")) {
+        userFriendly =
+          "El inicio de sesión por correo electrónico se encuentra desactivado en el panel de Supabase Auth (Authentication -> Providers -> Email).";
+      } else if (msg.includes("Email not confirmed") || msg.includes("email_not_confirmed")) {
+        userFriendly =
+          "Tu correo electrónico aún no ha sido confirmado. Por favor revisa tu bandeja de entrada o spam.";
+      } else if (msg.includes("User disabled") || msg.includes("banned")) {
+        userFriendly = "Esta cuenta ha sido deshabilitada temporalmente. Contacta al soporte técnico.";
+      } else if (msg.includes("Too many requests") || msg.includes("over_request_rate_limit")) {
+        userFriendly = "Demasiados intentos fallidos. Por seguridad, espera unos minutos antes de reintentar.";
       } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
-        userFriendly = "No se pudo conectar con el servidor de Supabase. Revisa tu conexión.";
+        userFriendly = "No se pudo conectar con el servidor de Supabase. Revisa tu conexión a internet.";
       } else if (msg) {
         userFriendly = msg;
       }
+
       setErrorMsg(userFriendly);
       toast.error(userFriendly);
     } finally {
@@ -105,6 +126,22 @@ export default function LoginPage() {
             Accede a tu agenda, expedientes clínicos y notas confidenciales en producción.
           </p>
         </div>
+
+        {/* Banner de Contraseña Actualizada */}
+        {passwordUpdated && (
+          <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-2.5 animate-in fade-in duration-300">
+            <CheckCircle2 size={18} className="shrink-0 text-emerald-600" />
+            <span>¡Tu contraseña ha sido actualizada con éxito! Ingresa con tus nuevas credenciales.</span>
+          </div>
+        )}
+
+        {/* Banner de Correo Confirmado */}
+        {verified && (
+          <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-2.5 animate-in fade-in duration-300">
+            <CheckCircle2 size={18} className="shrink-0 text-emerald-600" />
+            <span>¡Correo electrónico verificado exitosamente! Ya puedes iniciar sesión.</span>
+          </div>
+        )}
 
         {/* Demostración Interactiva (Acceso Clínico 1-Click) */}
         <div className="rounded-3xl border-2 border-primary/20 bg-secondary/40 p-5 shadow-xs space-y-3">
@@ -150,8 +187,9 @@ export default function LoginPage() {
         {/* Formulario de Login Estándar */}
         <div className="rounded-3xl border bg-card p-6 sm:p-8 shadow-xs">
           {errorMsg && (
-            <div className="mb-5 rounded-xl bg-destructive/10 p-3 text-xs font-semibold text-destructive">
-              {errorMsg}
+            <div className="mb-5 rounded-xl bg-destructive/10 p-3 text-xs font-semibold text-destructive flex items-center gap-2">
+              <AlertCircle size={16} className="shrink-0" />
+              <span>{errorMsg}</span>
             </div>
           )}
 
@@ -243,5 +281,19 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="size-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

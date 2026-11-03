@@ -1,17 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/lib/auth-context";
-import { Brain, Lock, Eye, EyeOff, CheckCircle2, ArrowRight } from "lucide-react";
+import {
+  Brain,
+  Lock,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  ArrowRight,
+  AlertCircle,
+  KeyRound,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
 import { updatePasswordSchema, validateForm } from "@/lib/validations";
 
-export default function ActualizarContrasenaPage() {
+function ActualizarContrasenaContent() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -19,12 +30,72 @@ export default function ActualizarContrasenaPage() {
   const [success, setSuccess] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Si el usuario ya está autenticado en el sistema, redirigir a Mi Perfil & Seguridad
+  // Estados de verificación del token de recuperación
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [hasValidSession, setHasValidSession] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (!authLoading && user) {
-      router.replace("/configuracion?tab=seguridad");
+    let isMounted = true;
+
+    // 1. Inspeccionar hash y searchParams por errores de Supabase Auth (ej. otp_expired)
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    const search = typeof window !== "undefined" ? window.location.search : "";
+
+    const hashParams = new URLSearchParams(hash.replace(/^#/, ""));
+    const queryParams = new URLSearchParams(search);
+
+    const errorCode = hashParams.get("error_code") || queryParams.get("error_code");
+    const errorDesc = hashParams.get("error_description") || queryParams.get("error_description");
+    const error = hashParams.get("error") || queryParams.get("error");
+
+    if (errorCode || error) {
+      let friendly = "El enlace de recuperación es inválido o ha expirado.";
+      if (errorCode === "otp_expired" || (errorDesc && errorDesc.toLowerCase().includes("expired"))) {
+        friendly = "El enlace de recuperación ha caducado. Por motivos de seguridad clínica, los enlaces tienen una validez de 1 hora.";
+      } else if (errorDesc) {
+        friendly = decodeURIComponent(errorDesc.replace(/\+/g, " "));
+      }
+      setLinkError(friendly);
+      setCheckingSession(false);
+      return;
     }
-  }, [user, authLoading, router]);
+
+    // 2. Suscribirse a onAuthStateChange para capturar PASSWORD_RECOVERY
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+      if (event === "PASSWORD_RECOVERY" || (session && session.user)) {
+        setHasValidSession(true);
+        setLinkError(null);
+      }
+      setCheckingSession(false);
+    });
+
+    // 3. Comprobar sesión actual activa (Supabase parsea el hash #access_token en cliente)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
+      if (session?.user) {
+        setHasValidSession(true);
+        setLinkError(null);
+      } else {
+        // Verificar si la URL contiene indicios de token que Supabase aún esté procesando
+        const hasHashToken = hashParams.has("access_token") || hash.includes("type=recovery");
+        const hasQueryCode = queryParams.has("code");
+
+        if (!hasHashToken && !hasQueryCode) {
+          setHasValidSession(false);
+        }
+      }
+      setCheckingSession(false);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +109,7 @@ export default function ActualizarContrasenaPage() {
 
     setFieldErrors({});
 
-    const toastId = toast.loading("Actualizando contraseña...");
+    const toastId = toast.loading("Actualizando contraseña en Supabase...");
     try {
       setLoading(true);
 
@@ -50,15 +121,27 @@ export default function ActualizarContrasenaPage() {
         throw error;
       }
 
+      // Por seguridad, cerrar la sesión temporal de recuperación para forzar login limpio con nueva clave
+      await supabase.auth.signOut().catch(() => {});
+
       setSuccess(true);
       toast.success("Contraseña actualizada con éxito.", { id: toastId });
     } catch (err: any) {
       console.error("Error al actualizar contraseña:", err);
-      toast.error(
-        err.message ||
-          "No se pudo actualizar la contraseña. El enlace de recuperación puede haber expirado.",
-        { id: toastId }
-      );
+      const msg = err.message || "";
+      let friendlyMsg = "No se pudo actualizar la contraseña. El enlace de recuperación puede haber expirado.";
+
+      if (msg.includes("Auth session missing") || msg.includes("session")) {
+        friendlyMsg = "La sesión de recuperación expiró. Por favor solicita un nuevo enlace de recuperación.";
+      } else if (msg.includes("should be different")) {
+        friendlyMsg = "La nueva contraseña debe ser diferente a la anterior.";
+      } else if (msg.includes("at least 6 characters") || msg.includes("at least 8 characters")) {
+        friendlyMsg = "La contraseña debe tener al menos 8 caracteres.";
+      } else if (msg) {
+        friendlyMsg = msg;
+      }
+
+      toast.error(friendlyMsg, { id: toastId });
     } finally {
       setLoading(false);
     }
@@ -67,6 +150,7 @@ export default function ActualizarContrasenaPage() {
   return (
     <main className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md space-y-6">
+        {/* Brand Header */}
         <div className="text-center">
           <Link
             href="/"
@@ -78,7 +162,7 @@ export default function ActualizarContrasenaPage() {
             <span>Synkro</span>
           </Link>
           <span className="block text-[11px] font-semibold uppercase tracking-wider text-primary mt-1">
-            Seguridad de Acceso
+            Seguridad de Acceso Clínico
           </span>
 
           <h1 className="mt-6 text-2xl font-bold tracking-tight text-foreground">
@@ -89,22 +173,98 @@ export default function ActualizarContrasenaPage() {
           </p>
         </div>
 
+        {/* Card Principal */}
         <div className="rounded-3xl border bg-card p-6 sm:p-8 shadow-xs">
-          {success ? (
-            <div className="space-y-4 text-center py-2 animate-in fade-in duration-300">
+          {/* 1. Verificando token de recuperación */}
+          {checkingSession ? (
+            <div className="space-y-4 text-center py-8">
+              <Loader2 className="mx-auto size-8 animate-spin text-primary" />
+              <p className="text-xs text-muted-foreground">
+                Verificando credencial de recuperación de contraseña...
+              </p>
+            </div>
+          ) : linkError ? (
+            /* 2. Enlace inválido o expirado */
+            <div className="space-y-5 text-center py-2 animate-in fade-in duration-300">
+              <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+                <AlertCircle size={28} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-sm font-bold text-foreground">
+                  Enlace inválido o caducado
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {linkError}
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-col gap-2">
+                <Link
+                  href="/recuperar-contrasena"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity w-full shadow-xs cursor-pointer"
+                >
+                  <RefreshCw size={14} />
+                  <span>Solicitar nuevo enlace de recuperación</span>
+                </Link>
+
+                <Link
+                  href="/iniciar-sesion"
+                  className="inline-flex items-center justify-center rounded-xl border bg-card px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors w-full cursor-pointer"
+                >
+                  Volver a Iniciar Sesión
+                </Link>
+              </div>
+            </div>
+          ) : !hasValidSession && !success ? (
+            /* 3. No hay sesión de recuperación detectada */
+            <div className="space-y-5 text-center py-2 animate-in fade-in duration-300">
+              <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
+                <KeyRound size={28} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-sm font-bold text-foreground">
+                  Acceso mediante enlace requerido
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Para actualizar tu contraseña debes hacer clic en el enlace seguro enviado a tu correo electrónico por Synkro.
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-col gap-2">
+                <Link
+                  href="/recuperar-contrasena"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity w-full shadow-xs cursor-pointer"
+                >
+                  <span>Ir a Recuperar Contraseña</span>
+                  <ArrowRight size={14} />
+                </Link>
+
+                <Link
+                  href="/iniciar-sesion"
+                  className="inline-flex items-center justify-center rounded-xl border bg-card px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors w-full cursor-pointer"
+                >
+                  Volver a Iniciar Sesión
+                </Link>
+              </div>
+            </div>
+          ) : success ? (
+            /* 4. Contraseña actualizada exitosamente */
+            <div className="space-y-5 text-center py-2 animate-in fade-in duration-300">
               <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
                 <CheckCircle2 size={28} />
               </div>
-              <div className="space-y-1">
-                <h3 className="text-sm font-bold text-foreground">Contraseña actualizada</h3>
-                <p className="text-xs text-muted-foreground">
-                  Tu contraseña ha sido modificada con éxito. Ya puedes acceder con tus nuevas credenciales.
+              <div className="space-y-1.5">
+                <h3 className="text-sm font-bold text-foreground">
+                  ¡Contraseña actualizada con éxito!
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Tus nuevas credenciales han quedado registradas en Supabase. Ya puedes acceder con tu nueva contraseña.
                 </p>
               </div>
               <div className="pt-2">
                 <Link
-                  href="/iniciar-sesion"
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90 w-full shadow-xs cursor-pointer"
+                  href="/iniciar-sesion?password_updated=true"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90 w-full shadow-xs cursor-pointer transition-opacity"
                 >
                   <span>Iniciar Sesión ahora</span>
                   <ArrowRight size={14} />
@@ -112,10 +272,11 @@ export default function ActualizarContrasenaPage() {
               </div>
             </div>
           ) : (
+            /* 5. Formulario de Nueva Contraseña */
             <form onSubmit={handleUpdatePassword} className="space-y-4" noValidate>
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                  Nueva Contraseña
+                  Nueva Contraseña *
                 </label>
                 <div className="relative">
                   <Lock
@@ -153,7 +314,7 @@ export default function ActualizarContrasenaPage() {
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                  Confirmar Nueva Contraseña
+                  Confirmar Nueva Contraseña *
                 </label>
                 <div className="relative">
                   <Lock
@@ -180,12 +341,18 @@ export default function ActualizarContrasenaPage() {
                 )}
               </div>
 
+              <div className="rounded-xl bg-muted/40 p-3 text-[11px] text-muted-foreground space-y-1 border">
+                <span className="font-semibold text-foreground block">Requisitos de seguridad:</span>
+                <p>• Mínimo 8 caracteres</p>
+                <p>• Utiliza combinación de letras, números y símbolos para mayor protección</p>
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
                 className="flex h-11 w-full items-center justify-center rounded-xl bg-primary font-semibold text-xs text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 shadow-xs cursor-pointer"
               >
-                {loading ? "Actualizando contraseña..." : "Guardar Nueva Contraseña"}
+                {loading ? "Actualizando contraseña en Supabase..." : "Guardar Nueva Contraseña"}
               </button>
             </form>
           )}
@@ -199,5 +366,19 @@ export default function ActualizarContrasenaPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ActualizarContrasenaPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="size-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <ActualizarContrasenaContent />
+    </Suspense>
   );
 }

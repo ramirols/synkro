@@ -1,9 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Brain, Mail, ArrowLeft, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  Brain,
+  Mail,
+  ArrowLeft,
+  Send,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  ShieldCheck,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 import { passwordRecoverySchema, validateForm } from "@/lib/validations";
 
@@ -14,8 +24,19 @@ export default function RecuperarContrasenaPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const handleReset = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Temporizador de reenvío para respetar los 60s de rate limit de Supabase/Resend
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const interval = setInterval(() => {
+      setCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldown]);
+
+  const handleReset = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
 
     const validation = validateForm(passwordRecoverySchema, { email });
     if (!validation.success) {
@@ -33,20 +54,44 @@ export default function RecuperarContrasenaPage() {
       const origin =
         typeof window !== "undefined" && window.location.origin
           ? window.location.origin
-          : "https://synkro.velyonsoft.com";
+          : process.env.NEXT_PUBLIC_APP_URL || "https://synkro.velyonsoft.com";
 
-      const { error } = await supabase.auth.resetPasswordForEmail(validation.data.email.toLowerCase(), {
-        redirectTo: `${origin}/actualizar-contrasena`,
-      });
+      const targetRedirectUrl = `${origin}/actualizar-contrasena`;
+
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        validation.data.email.toLowerCase(),
+        {
+          redirectTo: targetRedirectUrl,
+        }
+      );
 
       if (error) {
         throw error;
       }
 
       setSubmitted(true);
+      setCooldown(60); // Iniciar cuenta regresiva de 60 segundos
+      toast.success("Enlace de recuperación enviado por correo electrónico.");
     } catch (err: any) {
-      console.error("Error en reset password:", err);
-      const friendlyMsg = err.message || "No se pudo procesar la solicitud. Revisa el correo ingresado.";
+      console.error("[RecuperarContrasena] Error:", err);
+      const msg = err.message || "";
+      let friendlyMsg = "No se pudo procesar la solicitud. Revisa el correo ingresado.";
+
+      if (msg.includes("60 seconds") || msg.includes("over_email_send_rate_limit")) {
+        friendlyMsg =
+          "Por motivos de seguridad, solo puedes solicitar un correo cada 60 segundos. Por favor espera antes de volver a intentar.";
+      } else if (msg.includes("Email logins are disabled")) {
+        friendlyMsg =
+          "El inicio de sesión por correo está deshabilitado en Supabase Auth. Habilítalo en Authentication -> Providers -> Email.";
+      } else if (msg.includes("Error sending recovery email") || msg.includes("SMTP")) {
+        friendlyMsg =
+          "Hubo un error al enviar el correo mediante el servidor SMTP (Resend). Verifica que tu cuenta o clave de Resend estén activas.";
+      } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+        friendlyMsg = "No se pudo conectar con el servidor de Supabase. Revisa tu conexión a internet.";
+      } else if (msg) {
+        friendlyMsg = msg;
+      }
+
       setErrorMsg(friendlyMsg);
       toast.error(friendlyMsg);
     } finally {
@@ -100,19 +145,45 @@ export default function RecuperarContrasenaPage() {
                 <CheckCircle2 size={28} />
               </div>
               <div className="space-y-1">
-                <h3 className="text-sm font-bold text-foreground">Correo enviado</h3>
+                <h3 className="text-sm font-bold text-foreground">Correo enviado con éxito</h3>
                 <p className="text-xs text-muted-foreground">
                   Hemos enviado las instrucciones para restablecer tu contraseña a{" "}
                   <strong className="text-foreground">{email}</strong>.
                 </p>
               </div>
-              <p className="text-[11px] text-muted-foreground/80">
-                Si no lo encuentras en tu bandeja de entrada, revisa tu carpeta de spam o correo no deseado.
-              </p>
-              <div className="pt-2">
+
+              <div className="rounded-2xl border bg-muted/40 p-3.5 text-left text-[11px] text-muted-foreground space-y-2">
+                <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                  <ShieldCheck size={14} className="text-primary" />
+                  <span>Información importante sobre el enlace:</span>
+                </div>
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>El enlace fue emitido a través de nuestro servidor de correo seguro (Resend SMTP).</li>
+                  <li>Tiene una vigencia de <strong>1 hora</strong> por confidencialidad clínica.</li>
+                  <li>Si no lo ves en tu bandeja de entrada, revisa tu carpeta de <strong>Spam o Correo No Deseado</strong>.</li>
+                </ul>
+              </div>
+
+              <div className="pt-2 flex flex-col gap-2">
+                <button
+                  type="button"
+                  disabled={loading || cooldown > 0}
+                  onClick={() => handleReset()}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50 transition-colors w-full cursor-pointer"
+                >
+                  <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+                  <span>
+                    {cooldown > 0
+                      ? `Reenviar correo en ${cooldown}s`
+                      : loading
+                      ? "Reenviando..."
+                      : "Reenviar enlace de recuperación"}
+                  </span>
+                </button>
+
                 <Link
                   href="/iniciar-sesion"
-                  className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                  className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity w-full shadow-xs"
                 >
                   Regresar a Iniciar Sesión
                 </Link>
@@ -122,7 +193,7 @@ export default function RecuperarContrasenaPage() {
             <form onSubmit={handleReset} className="space-y-4" noValidate>
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                  Correo Electrónico
+                  Correo Electrónico Registrado
                 </label>
                 <div className="relative">
                   <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
