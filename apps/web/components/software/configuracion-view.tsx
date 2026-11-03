@@ -33,6 +33,11 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useGuidedTour } from "@/components/software/guided-tour";
+import {
+  profileSettingsSchema,
+  changePasswordSettingsSchema,
+  validateForm,
+} from "@/lib/validations";
 
 function ConfiguracionContent() {
   const { user, refreshProfile } = useAuth();
@@ -66,6 +71,7 @@ function ConfiguracionContent() {
   const [officeAddress, setOfficeAddress] = useState("");
   const [meetLink, setMeetLink] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [profileFieldErrors, setProfileFieldErrors] = useState<Record<string, string>>({});
 
   // Avatar Upload State
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -77,6 +83,7 @@ function ConfiguracionContent() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [updatingPassword, setUpdatingPassword] = useState(false);
+  const [passwordFieldErrors, setPasswordFieldErrors] = useState<Record<string, string>>({});
 
   // Clinic State
   const [clinicName, setClinicName] = useState("Centro Psicológico Synkro");
@@ -244,6 +251,24 @@ function ConfiguracionContent() {
       return;
     }
 
+    const validation = validateForm(profileSettingsSchema, {
+      fullName,
+      phone: phone || undefined,
+      specialty: specialty || undefined,
+      licenseNumber: licenseNumber || undefined,
+      bio: bio || undefined,
+      officeAddress: officeAddress || undefined,
+      defaultMeetLink: meetLink || undefined,
+    });
+
+    if (!validation.success) {
+      setProfileFieldErrors(validation.errors);
+      toast.error(validation.firstError);
+      return;
+    }
+
+    setProfileFieldErrors({});
+
     if (!user?.id) return;
 
     try {
@@ -254,13 +279,13 @@ function ConfiguracionContent() {
       const { error: profErr } = await supabase
         .from("profiles")
         .update({
-          full_name: fullName.trim(),
-          specialty: specialty.trim(),
-          license_number: licenseNumber.trim(),
-          phone: phone.trim(),
-          bio: bio.trim(),
-          office_address: officeAddress.trim(),
-          default_meet_link: meetLink.trim(),
+          full_name: validation.data.fullName,
+          specialty: validation.data.specialty || "",
+          license_number: validation.data.licenseNumber || "",
+          phone: validation.data.phone || "",
+          bio: validation.data.bio || "",
+          office_address: validation.data.officeAddress || "",
+          default_meet_link: validation.data.defaultMeetLink || "",
           avatar_url: avatarUrl || null,
         })
         .eq("id", user.id);
@@ -271,9 +296,9 @@ function ConfiguracionContent() {
       await supabase
         .from("professionals")
         .update({
-          specialty: specialty.trim(),
-          license_number: licenseNumber.trim(),
-          bio: bio.trim(),
+          specialty: validation.data.specialty || "",
+          license_number: validation.data.licenseNumber || "",
+          bio: validation.data.bio || "",
         })
         .eq("profile_id", user.id);
 
@@ -292,15 +317,18 @@ function ConfiguracionContent() {
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newPassword.length < 8) {
-      toast.error("La nueva contraseña debe tener al menos 8 caracteres.");
+    const validation = validateForm(changePasswordSettingsSchema, {
+      newPassword,
+      confirmPassword,
+    });
+
+    if (!validation.success) {
+      setPasswordFieldErrors(validation.errors);
+      toast.error(validation.firstError);
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      toast.error("Las contraseñas ingresadas no coinciden.");
-      return;
-    }
+    setPasswordFieldErrors({});
 
     if (isDemo) {
       notifyDemoWriteBlocked("Actualizar Contraseña de Acceso");
@@ -311,7 +339,7 @@ function ConfiguracionContent() {
     try {
       setUpdatingPassword(true);
       const { error } = await supabase.auth.updateUser({
-        password: newPassword,
+        password: validation.data.newPassword,
       });
 
       if (error) throw error;
@@ -439,7 +467,7 @@ function ConfiguracionContent() {
 
       {/* TAB 1: PERFIL DEL PSICÓLOGO */}
       {activeTab === "perfil" && (
-        <form onSubmit={handleSaveProfile} className="space-y-6">
+        <form onSubmit={handleSaveProfile} className="space-y-6" noValidate>
           <div className="rounded-3xl border bg-card p-6 lg:p-8 shadow-xs space-y-6">
             <div className="flex items-center justify-between border-b pb-4">
               <div>
@@ -527,11 +555,18 @@ function ConfiguracionContent() {
                 </label>
                 <input
                   type="text"
-                  required
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  onChange={(e) => {
+                    setFullName(e.target.value);
+                    if (profileFieldErrors.fullName) setProfileFieldErrors((p) => ({ ...p, fullName: "" }));
+                  }}
+                  className={`h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                    profileFieldErrors.fullName ? "border-destructive focus:ring-destructive/20" : ""
+                  }`}
                 />
+                {profileFieldErrors.fullName && (
+                  <p className="mt-1 text-xs text-destructive">{profileFieldErrors.fullName}</p>
+                )}
               </div>
 
               <div>
@@ -540,12 +575,19 @@ function ConfiguracionContent() {
                 </label>
                 <input
                   type="text"
-                  required
                   placeholder="Ej. C.Ps.P. 28419"
                   value={licenseNumber}
-                  onChange={(e) => setLicenseNumber(e.target.value)}
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none font-semibold text-primary"
+                  onChange={(e) => {
+                    setLicenseNumber(e.target.value);
+                    if (profileFieldErrors.licenseNumber) setProfileFieldErrors((p) => ({ ...p, licenseNumber: "" }));
+                  }}
+                  className={`h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none font-semibold text-primary transition-colors focus:ring-2 focus:ring-primary/20 ${
+                    profileFieldErrors.licenseNumber ? "border-destructive focus:ring-destructive/20" : ""
+                  }`}
                 />
+                {profileFieldErrors.licenseNumber && (
+                  <p className="mt-1 text-xs text-destructive">{profileFieldErrors.licenseNumber}</p>
+                )}
               </div>
             </div>
 
@@ -556,12 +598,19 @@ function ConfiguracionContent() {
                 </label>
                 <input
                   type="text"
-                  required
                   placeholder="Ej. Psicología Clínica y TCC"
                   value={specialty}
-                  onChange={(e) => setSpecialty(e.target.value)}
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  onChange={(e) => {
+                    setSpecialty(e.target.value);
+                    if (profileFieldErrors.specialty) setProfileFieldErrors((p) => ({ ...p, specialty: "" }));
+                  }}
+                  className={`h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                    profileFieldErrors.specialty ? "border-destructive focus:ring-destructive/20" : ""
+                  }`}
                 />
+                {profileFieldErrors.specialty && (
+                  <p className="mt-1 text-xs text-destructive">{profileFieldErrors.specialty}</p>
+                )}
               </div>
 
               <div>
@@ -572,9 +621,17 @@ function ConfiguracionContent() {
                   type="tel"
                   placeholder="+51 984 555 123"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    if (profileFieldErrors.phone) setProfileFieldErrors((p) => ({ ...p, phone: "" }));
+                  }}
+                  className={`h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                    profileFieldErrors.phone ? "border-destructive focus:ring-destructive/20" : ""
+                  }`}
                 />
+                {profileFieldErrors.phone && (
+                  <p className="mt-1 text-xs text-destructive">{profileFieldErrors.phone}</p>
+                )}
               </div>
             </div>
 
@@ -587,9 +644,17 @@ function ConfiguracionContent() {
                   type="text"
                   placeholder="Ej. Av. Benavides 1570, Miraflores, Lima"
                   value={officeAddress}
-                  onChange={(e) => setOfficeAddress(e.target.value)}
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  onChange={(e) => {
+                    setOfficeAddress(e.target.value);
+                    if (profileFieldErrors.officeAddress) setProfileFieldErrors((p) => ({ ...p, officeAddress: "" }));
+                  }}
+                  className={`h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                    profileFieldErrors.officeAddress ? "border-destructive focus:ring-destructive/20" : ""
+                  }`}
                 />
+                {profileFieldErrors.officeAddress && (
+                  <p className="mt-1 text-xs text-destructive">{profileFieldErrors.officeAddress}</p>
+                )}
               </div>
 
               <div>
@@ -600,9 +665,17 @@ function ConfiguracionContent() {
                   type="url"
                   placeholder="https://meet.google.com/xyz-abcd"
                   value={meetLink}
-                  onChange={(e) => setMeetLink(e.target.value)}
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  onChange={(e) => {
+                    setMeetLink(e.target.value);
+                    if (profileFieldErrors.defaultMeetLink) setProfileFieldErrors((p) => ({ ...p, defaultMeetLink: "" }));
+                  }}
+                  className={`h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                    profileFieldErrors.defaultMeetLink ? "border-destructive focus:ring-destructive/20" : ""
+                  }`}
                 />
+                {profileFieldErrors.defaultMeetLink && (
+                  <p className="mt-1 text-xs text-destructive">{profileFieldErrors.defaultMeetLink}</p>
+                )}
               </div>
             </div>
 
@@ -797,7 +870,7 @@ function ConfiguracionContent() {
 
       {/* TAB 3: SEGURIDAD & ACTUALIZACIÓN DE CONTRASEÑA (DENTRO DEL SISTEMA) */}
       {activeTab === "seguridad" && (
-        <form onSubmit={handleUpdatePassword} className="space-y-6">
+        <form onSubmit={handleUpdatePassword} className="space-y-6" noValidate>
           <div className="rounded-3xl border bg-card p-6 lg:p-8 shadow-xs space-y-6">
             <div className="flex items-center gap-3 border-b pb-4">
               <div className="flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -825,11 +898,15 @@ function ConfiguracionContent() {
                   />
                   <input
                     type={showNewPassword ? "text" : "password"}
-                    required
                     placeholder="Mínimo 8 caracteres"
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setNewPassword(e.target.value);
+                      if (passwordFieldErrors.newPassword) setPasswordFieldErrors((p) => ({ ...p, newPassword: "" }));
+                    }}
+                    className={`h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      passwordFieldErrors.newPassword ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
                   <button
                     type="button"
@@ -840,6 +917,9 @@ function ConfiguracionContent() {
                     {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+                {passwordFieldErrors.newPassword && (
+                  <p className="mt-1 text-xs text-destructive">{passwordFieldErrors.newPassword}</p>
+                )}
               </div>
 
               <div>
@@ -853,11 +933,15 @@ function ConfiguracionContent() {
                   />
                   <input
                     type={showConfirmPassword ? "text" : "password"}
-                    required
                     placeholder="Repite tu nueva contraseña"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (passwordFieldErrors.confirmPassword) setPasswordFieldErrors((p) => ({ ...p, confirmPassword: "" }));
+                    }}
+                    className={`h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      passwordFieldErrors.confirmPassword ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
                   <button
                     type="button"
@@ -868,6 +952,9 @@ function ConfiguracionContent() {
                     {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+                {passwordFieldErrors.confirmPassword && (
+                  <p className="mt-1 text-xs text-destructive">{passwordFieldErrors.confirmPassword}</p>
+                )}
               </div>
 
               {/* Requisitos de seguridad */}

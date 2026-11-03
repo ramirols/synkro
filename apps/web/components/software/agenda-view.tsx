@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useClinicalData } from "@/lib/clinical-context";
 import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
+import { toast } from "sonner";
+import { appointmentSchema, validateForm } from "@/lib/validations";
 import {
   CalendarDays,
   Plus,
@@ -82,6 +84,7 @@ export default function AgendaView() {
   const [consultorioBox, setConsultorioBox] = useState("Box 1 (Adultos / TCC)");
   const [meetingLink, setMeetingLink] = useState("");
   const [notes, setNotes] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Dynamic 7-day week calculation based on base date Monday 2026-09-28
   const baseMonday = new Date(2026, 8, 28); // Month is 0-indexed: 8 = Septiembre
@@ -172,40 +175,57 @@ export default function AgendaView() {
 
   const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPatientId || !appointmentDate || !startTime) {
-      setErrorMsg("Selecciona paciente, fecha y hora de la cita.");
+
+    const validation = validateForm(appointmentSchema, {
+      patient_id: selectedPatientId,
+      appointment_date: appointmentDate,
+      start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
+      modality,
+      meeting_link: modality === "virtual" && meetingLink.trim() ? meetingLink.trim() : undefined,
+      notes: notes.trim() || undefined,
+    });
+
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      setErrorMsg(validation.firstError);
+      toast.error(validation.firstError);
       return;
     }
+
+    setFieldErrors({});
 
     try {
       setSaving(true);
       setErrorMsg("");
 
       const noteContent = modality === "presencial" 
-        ? `${consultorioBox}${notes ? " • " + notes.trim() : ""}`
-        : notes.trim() || null;
+        ? `${consultorioBox}${validation.data.notes ? " • " + validation.data.notes : ""}`
+        : validation.data.notes || null;
 
       const defaultMeetingLink =
         user?.default_meet_link ||
         (isDemo ? "https://meet.google.com/syn-kro-demo" : "https://meet.google.com/new");
 
       await service.createAppointment({
-        patient_id: selectedPatientId,
-        appointment_date: appointmentDate,
-        start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
+        patient_id: validation.data.patient_id,
+        appointment_date: validation.data.appointment_date,
+        start_time: validation.data.start_time,
         end_time: null,
-        modality: modality,
-        meeting_link: modality === "virtual" ? meetingLink.trim() || defaultMeetingLink : null,
+        modality: validation.data.modality,
+        meeting_link: validation.data.modality === "virtual" ? validation.data.meeting_link || defaultMeetingLink : null,
         notes: noteContent,
         status: "scheduled",
       });
 
       setIsModalOpen(false);
       setNotes("");
+      toast.success("Cita agendada exitosamente.");
       await loadData();
     } catch (err: any) {
       console.error("Error creating appointment:", err);
-      setErrorMsg(err.message || "Error al agendar cita");
+      const msg = err.message || "Error al agendar cita";
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -913,7 +933,7 @@ export default function AgendaView() {
               </div>
             )}
 
-            <form onSubmit={handleCreateAppointment} className="space-y-4">
+            <form onSubmit={handleCreateAppointment} className="space-y-4" noValidate>
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Seleccionar Paciente *
@@ -923,9 +943,16 @@ export default function AgendaView() {
                     patients.map((p) => [p.id, `${p.first_name} ${p.last_name}`])
                   )}
                   value={selectedPatientId}
-                  onValueChange={(val) => val && setSelectedPatientId(val)}
+                  onValueChange={(val) => {
+                    if (val) {
+                      setSelectedPatientId(val);
+                      if (fieldErrors.patient_id) setFieldErrors((p) => ({ ...p, patient_id: "" }));
+                    }
+                  }}
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl border bg-background px-3 text-sm">
+                  <SelectTrigger className={`h-10 w-full rounded-xl border bg-background px-3 text-sm ${
+                    fieldErrors.patient_id ? "border-destructive focus:ring-destructive/20" : ""
+                  }`}>
                     <SelectValue placeholder="Selecciona un paciente..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -936,6 +963,9 @@ export default function AgendaView() {
                     ))}
                   </SelectContent>
                 </Select>
+                {fieldErrors.patient_id && (
+                  <p className="mt-1 text-[11px] text-destructive">{fieldErrors.patient_id}</p>
+                )}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -945,11 +975,18 @@ export default function AgendaView() {
                   </label>
                   <input
                     type="date"
-                    required
                     value={appointmentDate}
-                    onChange={(e) => setAppointmentDate(e.target.value)}
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setAppointmentDate(e.target.value);
+                      if (fieldErrors.appointment_date) setFieldErrors((p) => ({ ...p, appointment_date: "" }));
+                    }}
+                    className={`h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      fieldErrors.appointment_date ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
+                  {fieldErrors.appointment_date && (
+                    <p className="mt-1 text-[11px] text-destructive">{fieldErrors.appointment_date}</p>
+                  )}
                 </div>
 
                 <div>
@@ -958,11 +995,18 @@ export default function AgendaView() {
                   </label>
                   <input
                     type="time"
-                    required
                     value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setStartTime(e.target.value);
+                      if (fieldErrors.start_time) setFieldErrors((p) => ({ ...p, start_time: "" }));
+                    }}
+                    className={`h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      fieldErrors.start_time ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
+                  {fieldErrors.start_time && (
+                    <p className="mt-1 text-[11px] text-destructive">{fieldErrors.start_time}</p>
+                  )}
                 </div>
               </div>
 
@@ -1027,9 +1071,17 @@ export default function AgendaView() {
                     type="url"
                     placeholder="https://meet.google.com/syn-kro-demo"
                     value={meetingLink}
-                    onChange={(e) => setMeetingLink(e.target.value)}
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setMeetingLink(e.target.value);
+                      if (fieldErrors.meeting_link) setFieldErrors((p) => ({ ...p, meeting_link: "" }));
+                    }}
+                    className={`h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      fieldErrors.meeting_link ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
+                  {fieldErrors.meeting_link && (
+                    <p className="mt-1 text-[11px] text-destructive">{fieldErrors.meeting_link}</p>
+                  )}
                 </div>
               )}
 

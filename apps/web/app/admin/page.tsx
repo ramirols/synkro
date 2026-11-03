@@ -30,6 +30,12 @@ import {
 } from "lucide-react";
 import { PLANS_CONFIG, SubscriptionPlan, SubscriptionStatus } from "@/lib/config/plans";
 import { COMMERCIAL_CONFIG } from "@/lib/config/commercial";
+import { toast } from "sonner";
+import {
+  confirmPaymentSchema,
+  adjustSubscriptionSchema,
+  validateForm,
+} from "@/lib/validations";
 
 interface RealOrganizationItem {
   id: string;
@@ -148,6 +154,21 @@ export default function MasterAdminPage() {
     e.preventDefault();
     if (!selectedOrg) return;
 
+    const validation = validateForm(confirmPaymentSchema, {
+      plan: paymentPlan,
+      months: paymentMonths,
+      amount: paymentAmount,
+      paymentMethod,
+      referenceCode: paymentRefCode || undefined,
+      notes: paymentNotes || undefined,
+    });
+
+    if (!validation.success) {
+      setActionErrorMsg(validation.firstError);
+      toast.error(validation.firstError);
+      return;
+    }
+
     try {
       setSubmittingPayment(true);
       setActionErrorMsg(null);
@@ -155,22 +176,25 @@ export default function MasterAdminPage() {
 
       const { data, error } = await supabase.rpc("admin_confirm_subscription_payment", {
         p_organization_id: selectedOrg.id,
-        p_plan: paymentPlan,
-        p_period_months: paymentMonths,
-        p_amount: paymentAmount,
-        p_payment_method: paymentMethod,
-        p_reference_code: paymentRefCode.trim() || null,
-        p_notes: paymentNotes.trim() || null,
+        p_plan: validation.data.plan,
+        p_period_months: validation.data.months,
+        p_amount: validation.data.amount,
+        p_payment_method: validation.data.paymentMethod,
+        p_reference_code: validation.data.referenceCode || null,
+        p_notes: validation.data.notes || null,
       });
 
       if (error) throw error;
 
       setActionSuccessMsg("¡Pago confirmado exitosamente! La suscripción está activa.");
+      toast.success("Pago confirmado y suscripción activada.");
       await fetchOrganizations();
       setTimeout(() => setSelectedOrg(null), 1800);
     } catch (err: any) {
       console.error("Error confirm payment:", err);
-      setActionErrorMsg(err.message || "Error al confirmar el pago.");
+      const msg = err.message || "Error al confirmar el pago.";
+      setActionErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setSubmittingPayment(false);
     }
@@ -181,6 +205,19 @@ export default function MasterAdminPage() {
     e.preventDefault();
     if (!selectedOrg) return;
 
+    const validation = validateForm(adjustSubscriptionSchema, {
+      plan: adjustPlan,
+      status: adjustStatus,
+      extendDays: adjustExtendDays,
+      notes: adjustNotes || undefined,
+    });
+
+    if (!validation.success) {
+      setActionErrorMsg(validation.firstError);
+      toast.error(validation.firstError);
+      return;
+    }
+
     try {
       setSubmittingPayment(true);
       setActionErrorMsg(null);
@@ -188,20 +225,23 @@ export default function MasterAdminPage() {
 
       const { data, error } = await supabase.rpc("admin_update_subscription", {
         p_organization_id: selectedOrg.id,
-        p_plan: adjustPlan,
-        p_status: adjustStatus,
-        p_extend_days: adjustExtendDays > 0 ? adjustExtendDays : null,
-        p_notes: adjustNotes.trim() || null,
+        p_plan: validation.data.plan,
+        p_status: validation.data.status,
+        p_extend_days: validation.data.extendDays > 0 ? validation.data.extendDays : null,
+        p_notes: validation.data.notes || null,
       });
 
       if (error) throw error;
 
       setActionSuccessMsg("Suscripción actualizada exitosamente.");
+      toast.success("Suscripción actualizada.");
       await fetchOrganizations();
       setTimeout(() => setSelectedOrg(null), 1800);
     } catch (err: any) {
       console.error("Error adjust subscription:", err);
-      setActionErrorMsg(err.message || "Error al ajustar la suscripción.");
+      const msg = err.message || "Error al ajustar la suscripción.";
+      setActionErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setSubmittingPayment(false);
     }

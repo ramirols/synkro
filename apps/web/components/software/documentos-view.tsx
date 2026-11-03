@@ -5,6 +5,8 @@ import Link from "next/link";
 import { PatientFile, Patient } from "@/lib/types/clinical";
 import { useClinicalData } from "@/lib/clinical-context";
 import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
+import { toast } from "sonner";
+import { documentSchema, validateForm } from "@/lib/validations";
 import {
   FileText,
   Plus,
@@ -61,6 +63,7 @@ export default function DocumentosView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Viewer State
   const [viewingDoc, setViewingDoc] = useState<PatientFile | null>(null);
@@ -161,16 +164,28 @@ export default function DocumentosView() {
 
   const handleCreateDocument = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!patientId || !fileName.trim()) {
-      setErrorMsg("Completa los datos del paciente y nombre de archivo.");
+
+    const validation = validateForm(documentSchema, {
+      patientId,
+      fileName,
+      category: categoryLabel,
+      sharedWithPatient,
+    });
+
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      setErrorMsg(validation.firstError);
+      toast.error(validation.firstError);
       return;
     }
+
+    setFieldErrors({});
 
     try {
       setSaving(true);
       setErrorMsg("");
 
-      const categoryObj = CATEGORY_MAP[categoryLabel] || {
+      const categoryObj = CATEGORY_MAP[validation.data.category] || {
         label: "Otro Documento",
         key: "other",
       };
@@ -179,9 +194,9 @@ export default function DocumentosView() {
         // Subida real a Supabase Storage con políticas de privacidad
         await service.uploadFile(
           draggedFile,
-          patientId,
+          validation.data.patientId,
           categoryObj.key,
-          sharedWithPatient
+          validation.data.sharedWithPatient
         );
       } else {
         // Registro de metadatos o demo
@@ -190,14 +205,14 @@ export default function DocumentosView() {
           : "1.2 MB";
 
         await service.createFile({
-          patient_id: patientId,
-          file_name: fileName.trim(),
-          storage_path: `patient-files/${patientId}/${Date.now()}_${fileName.trim()}`,
+          patient_id: validation.data.patientId,
+          file_name: validation.data.fileName,
+          storage_path: `patient-files/${validation.data.patientId}/${Date.now()}_${validation.data.fileName}`,
           file_type: fileType,
           category: categoryObj.label,
           file_category: categoryObj.key,
           file_size: fileSizeFormatted,
-          shared_with_patient: sharedWithPatient,
+          shared_with_patient: validation.data.sharedWithPatient,
         });
       }
 
@@ -205,10 +220,13 @@ export default function DocumentosView() {
       setDraggedFile(null);
       setSharedWithPatient(false);
       setIsModalOpen(false);
+      toast.success("Documento subido a la bóveda exitosamente.");
       await loadData();
     } catch (err: any) {
       console.error("Error creating document record:", err);
-      setErrorMsg(err.message || "Error al registrar documento.");
+      const msg = err.message || "Error al registrar documento.";
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }

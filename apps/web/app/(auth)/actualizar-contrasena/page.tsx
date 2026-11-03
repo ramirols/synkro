@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { Brain, Lock, Eye, EyeOff, CheckCircle2, ArrowRight } from "lucide-react";
+import { updatePasswordSchema, validateForm } from "@/lib/validations";
 
 export default function ActualizarContrasenaPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function ActualizarContrasenaPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Si el usuario ya está autenticado en el sistema, redirigir a Mi Perfil & Seguridad
   useEffect(() => {
@@ -27,22 +29,21 @@ export default function ActualizarContrasenaPage() {
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password.length < 8) {
-      toast.error("La nueva contraseña debe tener al menos 8 caracteres.");
+    const validation = validateForm(updatePasswordSchema, { password, confirmPassword });
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      toast.error(validation.firstError);
       return;
     }
 
-    if (password !== confirmPassword) {
-      toast.error("Las contraseñas no coinciden.");
-      return;
-    }
+    setFieldErrors({});
 
     const toastId = toast.loading("Actualizando contraseña...");
     try {
       setLoading(true);
 
       const { error } = await supabase.auth.updateUser({
-        password: password,
+        password: validation.data.password,
       });
 
       if (error) {
@@ -111,7 +112,7 @@ export default function ActualizarContrasenaPage() {
               </div>
             </div>
           ) : (
-            <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <form onSubmit={handleUpdatePassword} className="space-y-4" noValidate>
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Nueva Contraseña
@@ -123,26 +124,36 @@ export default function ActualizarContrasenaPage() {
                   />
                   <input
                     type={showPassword ? "text" : "password"}
-                    required
                     placeholder="Mínimo 8 caracteres"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (fieldErrors.password) {
+                        setFieldErrors((prev) => ({ ...prev, password: "" }));
+                      }
+                    }}
+                    className={`h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      fieldErrors.password ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
                     tabIndex={-1}
+                    title={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+                {fieldErrors.password && (
+                  <p className="mt-1 text-xs text-destructive">{fieldErrors.password}</p>
+                )}
               </div>
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                  Confirmar Contraseña
+                  Confirmar Nueva Contraseña
                 </label>
                 <div className="relative">
                   <Lock
@@ -151,29 +162,38 @@ export default function ActualizarContrasenaPage() {
                   />
                   <input
                     type={showPassword ? "text" : "password"}
-                    required
                     placeholder="Repite tu nueva contraseña"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (fieldErrors.confirmPassword) {
+                        setFieldErrors((prev) => ({ ...prev, confirmPassword: "" }));
+                      }
+                    }}
+                    className={`h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      fieldErrors.confirmPassword ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
                 </div>
+                {fieldErrors.confirmPassword && (
+                  <p className="mt-1 text-xs text-destructive">{fieldErrors.confirmPassword}</p>
+                )}
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-xs text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 shadow-xs cursor-pointer"
+                className="flex h-11 w-full items-center justify-center rounded-xl bg-primary font-semibold text-xs text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 shadow-xs cursor-pointer"
               >
-                <span>{loading ? "Actualizando contraseña..." : "Guardar Nueva Contraseña"}</span>
-                <ArrowRight size={14} />
+                {loading ? "Actualizando contraseña..." : "Guardar Nueva Contraseña"}
               </button>
             </form>
           )}
 
           <div className="mt-6 border-t pt-4 text-center text-xs text-muted-foreground">
+            ¿Deseas volver?{" "}
             <Link href="/iniciar-sesion" className="font-semibold text-primary hover:underline">
-              Volver a Iniciar Sesión
+              Ir al Inicio de Sesión
             </Link>
           </div>
         </div>

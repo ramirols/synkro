@@ -15,27 +15,34 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { loginSchema, validateForm } from "@/lib/validations";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loginDemo } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password) {
-      toast.error("Por favor ingresa tu correo y contraseña.");
+
+    const validation = validateForm(loginSchema, { email, password });
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      toast.error(validation.firstError);
       return;
     }
+
+    setFieldErrors({});
 
     try {
       setLoading(true);
       setErrorMsg("");
-      const loggedUser = await login(email.trim().toLowerCase(), password);
+      const loggedUser = await login(validation.data.email.toLowerCase(), validation.data.password);
 
       toast.success("Sesión iniciada con éxito.");
 
@@ -148,7 +155,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4" noValidate>
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
                 Correo Electrónico
@@ -157,13 +164,22 @@ export default function LoginPage() {
                 <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="email"
-                  required
                   placeholder="doctor@synkro.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (fieldErrors.email) {
+                      setFieldErrors((prev) => ({ ...prev, email: "" }));
+                    }
+                  }}
+                  className={`h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                    fieldErrors.email ? "border-destructive focus:ring-destructive/20" : ""
+                  }`}
                 />
               </div>
+              {fieldErrors.email && (
+                <p className="mt-1 text-xs text-destructive">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -182,11 +198,17 @@ export default function LoginPage() {
                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type={showPassword ? "text" : "password"}
-                  required
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password) {
+                      setFieldErrors((prev) => ({ ...prev, password: "" }));
+                    }
+                  }}
+                  className={`h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                    fieldErrors.password ? "border-destructive focus:ring-destructive/20" : ""
+                  }`}
                 />
                 <button
                   type="button"
@@ -198,6 +220,9 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <p className="mt-1 text-xs text-destructive">{fieldErrors.password}</p>
+              )}
             </div>
 
             <button

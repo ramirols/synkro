@@ -4,16 +4,27 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { Brain, Mail, ArrowLeft, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+import { passwordRecoverySchema, validateForm } from "@/lib/validations";
 
 export default function RecuperarContrasenaPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+
+    const validation = validateForm(passwordRecoverySchema, { email });
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      toast.error(validation.firstError);
+      return;
+    }
+
+    setFieldErrors({});
 
     try {
       setLoading(true);
@@ -24,7 +35,7 @@ export default function RecuperarContrasenaPage() {
           ? window.location.origin
           : "https://synkro.velyonsoft.com";
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      const { error } = await supabase.auth.resetPasswordForEmail(validation.data.email.toLowerCase(), {
         redirectTo: `${origin}/actualizar-contrasena`,
       });
 
@@ -35,9 +46,9 @@ export default function RecuperarContrasenaPage() {
       setSubmitted(true);
     } catch (err: any) {
       console.error("Error en reset password:", err);
-      setErrorMsg(
-        err.message || "No se pudo procesar la solicitud. Revisa el correo ingresado."
-      );
+      const friendlyMsg = err.message || "No se pudo procesar la solicitud. Revisa el correo ingresado.";
+      setErrorMsg(friendlyMsg);
+      toast.error(friendlyMsg);
     } finally {
       setLoading(false);
     }
@@ -108,7 +119,7 @@ export default function RecuperarContrasenaPage() {
               </div>
             </div>
           ) : (
-            <form onSubmit={handleReset} className="space-y-4">
+            <form onSubmit={handleReset} className="space-y-4" noValidate>
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Correo Electrónico
@@ -117,13 +128,22 @@ export default function RecuperarContrasenaPage() {
                   <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="email"
-                    required
                     placeholder="doctor@synkro.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (fieldErrors.email) {
+                        setFieldErrors((prev) => ({ ...prev, email: "" }));
+                      }
+                    }}
+                    className={`h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      fieldErrors.email ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
                 </div>
+                {fieldErrors.email && (
+                  <p className="mt-1 text-xs text-destructive">{fieldErrors.email}</p>
+                )}
               </div>
 
               <button
@@ -132,7 +152,7 @@ export default function RecuperarContrasenaPage() {
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-xs text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 shadow-xs cursor-pointer"
               >
                 <Send size={14} />
-                <span>{loading ? "Enviando enlace..." : "Enviar enlace de recuperación"}</span>
+                <span>{loading ? "Enviando instrucciones..." : "Enviar enlace de recuperación"}</span>
               </button>
             </form>
           )}
@@ -140,7 +160,7 @@ export default function RecuperarContrasenaPage() {
           <div className="mt-6 border-t pt-4 text-center text-xs text-muted-foreground">
             ¿Recordaste tu contraseña?{" "}
             <Link href="/iniciar-sesion" className="font-semibold text-primary hover:underline">
-              Iniciar sesión
+              Iniciar Sesión
             </Link>
           </div>
         </div>
@@ -148,4 +168,3 @@ export default function RecuperarContrasenaPage() {
     </main>
   );
 }
-

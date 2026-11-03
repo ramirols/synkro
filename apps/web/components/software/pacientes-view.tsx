@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Patient } from "@/lib/types/clinical";
 import { useClinicalData } from "@/lib/clinical-context";
 import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
+import { toast } from "sonner";
+import { patientSchema, validateForm } from "@/lib/validations";
 import {
   Users,
   Plus,
@@ -67,6 +69,7 @@ export default function PacientesView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Form State
   const [firstName, setFirstName] = useState("");
@@ -103,26 +106,44 @@ export default function PacientesView() {
 
   const handleCreatePatient = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName.trim() || !lastName.trim()) {
-      setErrorMsg("Nombre y apellido son obligatorios");
+
+    const validation = validateForm(patientSchema, {
+      first_name: firstName,
+      last_name: lastName,
+      email: email || undefined,
+      phone: phone || undefined,
+      birth_date: birthDate || undefined,
+      gender: gender || undefined,
+      therapeutic_approach: therapeuticApproach || undefined,
+      consultation_reason: consultationReason || undefined,
+      emergency_contact: emergencyContact || undefined,
+      notes: notes || undefined,
+    });
+
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      setErrorMsg(validation.firstError);
+      toast.error(validation.firstError);
       return;
     }
+
+    setFieldErrors({});
 
     try {
       setSaving(true);
       setErrorMsg("");
 
       await service.createPatient({
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        email: email.trim() || null,
-        phone: phone.trim() || null,
-        birth_date: birthDate || null,
-        gender: gender || null,
-        therapeutic_approach: therapeuticApproach,
-        consultation_reason: consultationReason.trim() || null,
-        emergency_contact: emergencyContact.trim() || null,
-        notes: notes.trim() || null,
+        first_name: validation.data.first_name,
+        last_name: validation.data.last_name,
+        email: validation.data.email || null,
+        phone: validation.data.phone || null,
+        birth_date: validation.data.birth_date || null,
+        gender: validation.data.gender || null,
+        therapeutic_approach: validation.data.therapeutic_approach || null,
+        consultation_reason: validation.data.consultation_reason || null,
+        emergency_contact: validation.data.emergency_contact || null,
+        notes: validation.data.notes || null,
         status: "activo",
       });
 
@@ -136,10 +157,13 @@ export default function PacientesView() {
       setEmergencyContact("");
       setNotes("");
       setIsModalOpen(false);
+      toast.success("Paciente registrado con éxito.");
       await loadPatients();
     } catch (err: any) {
       console.error("Error creating patient:", err);
-      setErrorMsg(err.message || "Error al registrar paciente.");
+      const msg = err.message || "Error al registrar paciente.";
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -421,7 +445,7 @@ export default function PacientesView() {
               </button>
             </div>
 
-            <form onSubmit={handleCreatePatient} className="mt-6 space-y-4">
+            <form onSubmit={handleCreatePatient} className="mt-6 space-y-4" noValidate>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-foreground">
@@ -429,12 +453,19 @@ export default function PacientesView() {
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="Ej. Camila"
                     value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                      if (fieldErrors.first_name) setFieldErrors((p) => ({ ...p, first_name: "" }));
+                    }}
+                    className={`h-10 w-full rounded-xl border bg-background px-3 text-xs outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      fieldErrors.first_name ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
+                  {fieldErrors.first_name && (
+                    <p className="mt-1 text-[11px] text-destructive">{fieldErrors.first_name}</p>
+                  )}
                 </div>
 
                 <div>
@@ -443,12 +474,19 @@ export default function PacientesView() {
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="Ej. Valdivia Rosas"
                     value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setLastName(e.target.value);
+                      if (fieldErrors.last_name) setFieldErrors((p) => ({ ...p, last_name: "" }));
+                    }}
+                    className={`h-10 w-full rounded-xl border bg-background px-3 text-xs outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      fieldErrors.last_name ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
+                  {fieldErrors.last_name && (
+                    <p className="mt-1 text-[11px] text-destructive">{fieldErrors.last_name}</p>
+                  )}
                 </div>
               </div>
 
@@ -461,9 +499,17 @@ export default function PacientesView() {
                     type="email"
                     placeholder="paciente@correo.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: "" }));
+                    }}
+                    className={`h-10 w-full rounded-xl border bg-background px-3 text-xs outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      fieldErrors.email ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
+                  {fieldErrors.email && (
+                    <p className="mt-1 text-[11px] text-destructive">{fieldErrors.email}</p>
+                  )}
                 </div>
 
                 <div>
@@ -474,9 +520,17 @@ export default function PacientesView() {
                     type="tel"
                     placeholder="+51 984 123 456"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      if (fieldErrors.phone) setFieldErrors((p) => ({ ...p, phone: "" }));
+                    }}
+                    className={`h-10 w-full rounded-xl border bg-background px-3 text-xs outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      fieldErrors.phone ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
+                  {fieldErrors.phone && (
+                    <p className="mt-1 text-[11px] text-destructive">{fieldErrors.phone}</p>
+                  )}
                 </div>
               </div>
 
@@ -488,9 +542,17 @@ export default function PacientesView() {
                   <input
                     type="date"
                     value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setBirthDate(e.target.value);
+                      if (fieldErrors.birth_date) setFieldErrors((p) => ({ ...p, birth_date: "" }));
+                    }}
+                    className={`h-10 w-full rounded-xl border bg-background px-3 text-xs outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      fieldErrors.birth_date ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
+                  {fieldErrors.birth_date && (
+                    <p className="mt-1 text-[11px] text-destructive">{fieldErrors.birth_date}</p>
+                  )}
                 </div>
 
                 <div>

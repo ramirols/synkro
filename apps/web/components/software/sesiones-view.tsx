@@ -26,6 +26,7 @@ import {
   Lock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { sessionSchema, validateForm } from "@/lib/validations";
 import {
   Select,
   SelectContent,
@@ -78,6 +79,7 @@ function SesionesContent() {
   const [showPrivateNotes, setShowPrivateNotes] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Mode in Form: SOAP vs Libre
   const [formMode, setFormMode] = useState<"soap" | "libre">("soap");
@@ -137,21 +139,28 @@ function SesionesContent() {
 
   const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!patientId) {
-      setErrorMsg("Selecciona un paciente.");
+
+    const validation = validateForm(sessionSchema, {
+      patient_id: patientId,
+      session_number: sessionNumber,
+      emotional_score: emotionalScore,
+      session_summary: sessionSummary.trim() || undefined,
+      soap_subjective: soapSubjective.trim() || undefined,
+      soap_objective: soapObjective.trim() || undefined,
+      soap_assessment: soapAssessment.trim() || undefined,
+      soap_plan: soapPlan.trim() || undefined,
+      private_notes: privateNotes.trim() || undefined,
+      homework: homework.trim() || undefined,
+    });
+
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      setErrorMsg(validation.firstError);
+      toast.error(validation.firstError);
       return;
     }
 
-    const hasSoap =
-      soapSubjective.trim() ||
-      soapObjective.trim() ||
-      soapAssessment.trim() ||
-      soapPlan.trim();
-
-    if (!sessionSummary.trim() && !hasSoap && !privateNotes.trim()) {
-      setErrorMsg("Escribe al menos el resumen clínico, campos SOAP o una nota privada.");
-      return;
-    }
+    setFieldErrors({});
 
     try {
       setSaving(true);
@@ -161,26 +170,26 @@ function SesionesContent() {
       const finalSummary =
         sessionSummary.trim() ||
         [
-          soapSubjective ? `[S] ${soapSubjective}` : "",
-          soapObjective ? `[O] ${soapObjective}` : "",
-          soapAssessment ? `[A] ${soapAssessment}` : "",
-          soapPlan ? `[P] ${soapPlan}` : "",
+          validation.data.soap_subjective ? `[S] ${validation.data.soap_subjective}` : "",
+          validation.data.soap_objective ? `[O] ${validation.data.soap_objective}` : "",
+          validation.data.soap_assessment ? `[A] ${validation.data.soap_assessment}` : "",
+          validation.data.soap_plan ? `[P] ${validation.data.soap_plan}` : "",
         ]
           .filter(Boolean)
           .join("\n\n");
 
       await service.createSession({
-        patient_id: patientId,
+        patient_id: validation.data.patient_id,
         appointment_id: appointmentId || null,
-        session_number: Number(sessionNumber),
-        emotional_score: Number(emotionalScore),
+        session_number: Number(validation.data.session_number),
+        emotional_score: Number(validation.data.emotional_score),
         session_summary: finalSummary || null,
-        soap_subjective: soapSubjective.trim() || null,
-        soap_objective: soapObjective.trim() || null,
-        soap_assessment: soapAssessment.trim() || null,
-        soap_plan: soapPlan.trim() || null,
-        private_notes: privateNotes.trim() || null,
-        homework: homework.trim() || null,
+        soap_subjective: validation.data.soap_subjective || null,
+        soap_objective: validation.data.soap_objective || null,
+        soap_assessment: validation.data.soap_assessment || null,
+        soap_plan: validation.data.soap_plan || null,
+        private_notes: validation.data.private_notes || null,
+        homework: validation.data.homework || null,
       });
 
       // Reset
@@ -192,10 +201,13 @@ function SesionesContent() {
       setPrivateNotes("");
       setHomework("");
       setIsModalOpen(false);
+      toast.success("Sesión clínica guardada exitosamente.");
       await loadData();
     } catch (err: any) {
       console.error("Error creating session:", err);
-      setErrorMsg(err.message || "Error al guardar la sesión clínica.");
+      const msg = err.message || "Error al guardar la sesión clínica.";
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }

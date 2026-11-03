@@ -26,6 +26,11 @@ import {
   Check,
   ExternalLink,
 } from "lucide-react";
+import {
+  patientActivationSchema,
+  loginSchema,
+  validateForm,
+} from "@/lib/validations";
 
 interface InvitationInfo {
   valid: boolean;
@@ -64,6 +69,7 @@ function ActivarPortalContent() {
   // Estados de UI
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [copiedLink, setCopiedLink] = useState(false);
   const [activationStatus, setActivationStatus] = useState<
     "idle" | "activating" | "success" | "error"
@@ -176,23 +182,34 @@ function ActivarPortalContent() {
       return;
     }
 
-    if (!email || !email.includes("@")) {
-      setFormError("Por favor ingresa un correo electrónico válido.");
-      toast.error("Por favor ingresa un correo electrónico válido.");
-      return;
+    if (mode === "register") {
+      const validation = validateForm(patientActivationSchema, {
+        firstName,
+        lastName,
+        email,
+        phone,
+        birthDate,
+        password,
+        confirmPassword,
+      });
+
+      if (!validation.success) {
+        setFieldErrors(validation.errors);
+        setFormError(validation.firstError);
+        toast.error(validation.firstError);
+        return;
+      }
+    } else {
+      const validation = validateForm(loginSchema, { email, password });
+      if (!validation.success) {
+        setFieldErrors(validation.errors);
+        setFormError(validation.firstError);
+        toast.error(validation.firstError);
+        return;
+      }
     }
 
-    if (password.length < 6) {
-      setFormError("La contraseña debe tener al menos 6 caracteres.");
-      toast.error("La contraseña debe tener al menos 6 caracteres.");
-      return;
-    }
-
-    if (mode === "register" && password !== confirmPassword) {
-      setFormError("Las contraseñas no coinciden.");
-      toast.error("Las contraseñas no coinciden.");
-      return;
-    }
+    setFieldErrors({});
 
     try {
       setSubmitting(true);
@@ -544,7 +561,7 @@ function ActivarPortalContent() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {mode === "register" && (
             <>
               <div className="grid grid-cols-2 gap-3">
@@ -552,23 +569,37 @@ function ActivarPortalContent() {
                   <label className="text-xs font-semibold text-foreground">Nombres *</label>
                   <input
                     type="text"
-                    required
                     value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                      if (fieldErrors.firstName) setFieldErrors((p) => ({ ...p, firstName: "" }));
+                    }}
                     placeholder="Tus nombres"
-                    className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-hidden transition-colors"
+                    className={`w-full rounded-xl border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden transition-colors ${
+                      fieldErrors.firstName ? "border-destructive focus:border-destructive" : "border-input focus:border-primary"
+                    }`}
                   />
+                  {fieldErrors.firstName && (
+                    <p className="text-[11px] text-destructive">{fieldErrors.firstName}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">Apellidos *</label>
                   <input
                     type="text"
-                    required
                     value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
+                    onChange={(e) => {
+                      setLastName(e.target.value);
+                      if (fieldErrors.lastName) setFieldErrors((p) => ({ ...p, lastName: "" }));
+                    }}
                     placeholder="Tus apellidos"
-                    className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-hidden transition-colors"
+                    className={`w-full rounded-xl border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden transition-colors ${
+                      fieldErrors.lastName ? "border-destructive focus:border-destructive" : "border-input focus:border-primary"
+                    }`}
                   />
+                  {fieldErrors.lastName && (
+                    <p className="text-[11px] text-destructive">{fieldErrors.lastName}</p>
+                  )}
                 </div>
               </div>
 
@@ -581,10 +612,18 @@ function ActivarPortalContent() {
                   <input
                     type="tel"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      if (fieldErrors.phone) setFieldErrors((p) => ({ ...p, phone: "" }));
+                    }}
                     placeholder="Ej. 987654321"
-                    className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-hidden transition-colors"
+                    className={`w-full rounded-xl border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden transition-colors ${
+                      fieldErrors.phone ? "border-destructive focus:border-destructive" : "border-input focus:border-primary"
+                    }`}
                   />
+                  {fieldErrors.phone && (
+                    <p className="text-[11px] text-destructive">{fieldErrors.phone}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
@@ -594,9 +633,17 @@ function ActivarPortalContent() {
                   <input
                     type="date"
                     value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-hidden transition-colors"
+                    onChange={(e) => {
+                      setBirthDate(e.target.value);
+                      if (fieldErrors.birthDate) setFieldErrors((p) => ({ ...p, birthDate: "" }));
+                    }}
+                    className={`w-full rounded-xl border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden transition-colors ${
+                      fieldErrors.birthDate ? "border-destructive focus:border-destructive" : "border-input focus:border-primary"
+                    }`}
                   />
+                  {fieldErrors.birthDate && (
+                    <p className="text-[11px] text-destructive">{fieldErrors.birthDate}</p>
+                  )}
                 </div>
               </div>
             </>
@@ -609,12 +656,19 @@ function ActivarPortalContent() {
             </label>
             <input
               type="email"
-              required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: "" }));
+              }}
               placeholder="tu-correo@ejemplo.com"
-              className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-hidden transition-colors"
+              className={`w-full rounded-xl border bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden transition-colors ${
+                fieldErrors.email ? "border-destructive focus:border-destructive" : "border-input focus:border-primary"
+              }`}
             />
+            {fieldErrors.email && (
+              <p className="text-[11px] text-destructive">{fieldErrors.email}</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -634,12 +688,19 @@ function ActivarPortalContent() {
             </label>
             <input
               type={showPassword ? "text" : "password"}
-              required
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: "" }));
+              }}
               placeholder="Mínimo 6 caracteres"
-              className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-hidden transition-colors"
+              className={`w-full rounded-xl border bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden transition-colors ${
+                fieldErrors.password ? "border-destructive focus:border-destructive" : "border-input focus:border-primary"
+              }`}
             />
+            {fieldErrors.password && (
+              <p className="text-[11px] text-destructive">{fieldErrors.password}</p>
+            )}
           </div>
 
           {mode === "register" && (
@@ -650,12 +711,19 @@ function ActivarPortalContent() {
               </label>
               <input
                 type={showPassword ? "text" : "password"}
-                required
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  if (fieldErrors.confirmPassword) setFieldErrors((p) => ({ ...p, confirmPassword: "" }));
+                }}
                 placeholder="Repite tu contraseña"
-                className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-hidden transition-colors"
+                className={`w-full rounded-xl border bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden transition-colors ${
+                  fieldErrors.confirmPassword ? "border-destructive focus:border-destructive" : "border-input focus:border-primary"
+                }`}
               />
+              {fieldErrors.confirmPassword && (
+                <p className="text-[11px] text-destructive">{fieldErrors.confirmPassword}</p>
+              )}
             </div>
           )}
 

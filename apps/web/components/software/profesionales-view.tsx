@@ -8,6 +8,11 @@ import { useSubscription } from "@/lib/subscription-context";
 import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
 import { toast } from "sonner";
 import {
+  inviteProfessionalSchema,
+  referralSchema,
+  validateForm,
+} from "@/lib/validations";
+import {
   Building2,
   Users2,
   UserPlus,
@@ -138,6 +143,8 @@ export default function ProfesionalesView() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteLicense, setInviteLicense] = useState("");
   const [inviteSpecialty, setInviteSpecialty] = useState("Psicoterapia Cognitivo Conductual (TCC)");
+  const [inviteFieldErrors, setInviteFieldErrors] = useState<Record<string, string>>({});
+  const [referralFieldErrors, setReferralFieldErrors] = useState<Record<string, string>>({});
 
   // Derivaciones State
   const [referrals, setReferrals] = useState([
@@ -388,7 +395,21 @@ export default function ProfesionalesView() {
 
   const handleCreateReferral = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!refReason.trim()) return;
+
+    const validation = validateForm(referralSchema, {
+      patient: refPatient,
+      toTherapist: refTo,
+      priority: refPriority,
+      reason: refReason,
+    });
+
+    if (!validation.success) {
+      setReferralFieldErrors(validation.errors);
+      toast.error(validation.firstError);
+      return;
+    }
+
+    setReferralFieldErrors({});
 
     if (isDemo) {
       notifyDemoWriteBlocked("Nueva Derivación / Triage");
@@ -399,13 +420,13 @@ export default function ProfesionalesView() {
     const titularName = (therapists[0]?.name) || "Director Clínico";
     const newRef = {
       id: `ref-${Date.now()}`,
-      patient: refPatient,
+      patient: validation.data.patient,
       fromTherapist: titularName,
-      toTherapist: refTo,
-      reason: refReason.trim(),
+      toTherapist: validation.data.toTherapist,
+      reason: validation.data.reason,
       date: new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }),
       status: "En Revisión",
-      priority: refPriority,
+      priority: validation.data.priority,
     };
 
     setReferrals([newRef, ...referrals]);
@@ -416,10 +437,22 @@ export default function ProfesionalesView() {
 
   const handleInviteProfessional = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteName.trim() || !inviteEmail.trim()) {
-      toast.error("Por favor completa el nombre y correo del profesional.");
+
+    const validation = validateForm(inviteProfessionalSchema, {
+      fullName: inviteName,
+      email: inviteEmail,
+      specialty: inviteSpecialty,
+      licenseNumber: inviteLicense || undefined,
+      role: "psychologist",
+    });
+
+    if (!validation.success) {
+      setInviteFieldErrors(validation.errors);
+      toast.error(validation.firstError);
       return;
     }
+
+    setInviteFieldErrors({});
 
     if (isDemo) {
       notifyDemoWriteBlocked("Invitar nuevo terapeuta a la clínica");
@@ -434,7 +467,7 @@ export default function ProfesionalesView() {
       return;
     }
 
-    const initials = inviteName
+    const initials = validation.data.fullName
       .trim()
       .split(" ")
       .filter((w) => !w.startsWith("Lic") && !w.startsWith("Dr") && !w.startsWith("Mtr"))
@@ -445,20 +478,20 @@ export default function ProfesionalesView() {
 
     const newTherapist: (typeof DEMO_THERAPISTS)[0] = {
       id: `invited-${Date.now()}`,
-      name: inviteName.trim(),
+      name: validation.data.fullName,
       role: "Psicólogo(a) Colaborador(a)",
-      license: inviteLicense.trim() || "C.Ps.P. en trámite",
-      specialty: inviteSpecialty,
+      license: validation.data.licenseNumber || "C.Ps.P. en trámite",
+      specialty: validation.data.specialty,
       casesCount: 0,
       weeklyHours: "Por coordinar",
       status: "Invitación Enviada",
       avatar: initials,
       approach: "Enfoque clínico en integración",
-      email: inviteEmail.trim(),
+      email: validation.data.email,
     };
 
     setRealTherapists((prev) => [...prev, newTherapist]);
-    toast.success(`Invitación enviada a ${inviteEmail.trim()}. Se ha incorporado a tu equipo.`);
+    toast.success(`Invitación enviada a ${validation.data.email}. Se ha incorporado a tu equipo.`);
     setInviteName("");
     setInviteEmail("");
     setInviteLicense("");

@@ -16,12 +16,12 @@ import {
   MessageCircle,
   Eye,
   EyeOff,
-  Sparkles,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
 import { getCommercialWhatsAppLink } from "@/lib/config/commercial";
 import { OrganizationType } from "@/lib/config/plans";
+import { registerSchema, validateForm } from "@/lib/validations";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -33,6 +33,7 @@ export default function RegisterPage() {
   const [licenseNumber, setLicenseNumber] = useState("");
   const [clinicName, setClinicName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const whatsappActivationLink = getCommercialWhatsAppLink({
     intent: "trial_activation",
@@ -41,32 +42,36 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const cleanName = fullName.trim();
-    const cleanEmail = email.trim().toLowerCase();
+    const validation = validateForm(registerSchema, {
+      fullName,
+      email,
+      password,
+      organizationType,
+      clinicName: clinicName || undefined,
+      licenseNumber: licenseNumber || undefined,
+    });
 
-    if (!cleanName || !cleanEmail || !password) {
-      toast.error("Por favor completa los campos obligatorios.");
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      toast.error(validation.firstError);
       return;
     }
 
-    if (password.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres.");
-      return;
-    }
+    setFieldErrors({});
 
     const toastId = toast.loading("Configurando tu consultorio clínico...");
     try {
       setLoading(true);
 
       const { data, error } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password,
+        email: validation.data.email.toLowerCase(),
+        password: validation.data.password,
         options: {
           data: {
-            full_name: cleanName,
-            license_number: licenseNumber.trim(),
+            full_name: validation.data.fullName,
+            license_number: validation.data.licenseNumber || "",
             clinic_name:
-              clinicName.trim() ||
+              validation.data.clinicName ||
               (organizationType === "clinic" ? "Centro Psicológico" : "Mi Consulta"),
             organization_type: organizationType,
             requested_plan: "free",
@@ -81,8 +86,8 @@ export default function RegisterPage() {
       // Si la sesión no se establece de inmediato, iniciar sesión automáticamente
       if (!data.session) {
         const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password,
+          email: validation.data.email.toLowerCase(),
+          password: validation.data.password,
         });
 
         if (signInError) {
@@ -174,9 +179,9 @@ export default function RegisterPage() {
           </a>
         </div>
 
-        {/* Formulario de Registro Limpio */}
+        {/* Formulario de Registro */}
         <div className="rounded-3xl border bg-card p-6 sm:p-8 shadow-xs">
-          <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4" noValidate>
             {/* Modalidad de Práctica */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
@@ -236,13 +241,22 @@ export default function RegisterPage() {
                 />
                 <input
                   type="text"
-                  required
                   placeholder="Lic. Alejandro Mendoza"
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  onChange={(e) => {
+                    setFullName(e.target.value);
+                    if (fieldErrors.fullName) {
+                      setFieldErrors((prev) => ({ ...prev, fullName: "" }));
+                    }
+                  }}
+                  className={`h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                    fieldErrors.fullName ? "border-destructive focus:ring-destructive/20" : ""
+                  }`}
                 />
               </div>
+              {fieldErrors.fullName && (
+                <p className="mt-1 text-xs text-destructive">{fieldErrors.fullName}</p>
+              )}
             </div>
 
             <div>
@@ -256,13 +270,22 @@ export default function RegisterPage() {
                 />
                 <input
                   type="email"
-                  required
                   placeholder="doctor@synkro.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (fieldErrors.email) {
+                      setFieldErrors((prev) => ({ ...prev, email: "" }));
+                    }
+                  }}
+                  className={`h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                    fieldErrors.email ? "border-destructive focus:ring-destructive/20" : ""
+                  }`}
                 />
               </div>
+              {fieldErrors.email && (
+                <p className="mt-1 text-xs text-destructive">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -276,11 +299,17 @@ export default function RegisterPage() {
                 />
                 <input
                   type={showPassword ? "text" : "password"}
-                  required
                   placeholder="Mínimo 6 caracteres"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password) {
+                      setFieldErrors((prev) => ({ ...prev, password: "" }));
+                    }
+                  }}
+                  className={`h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                    fieldErrors.password ? "border-destructive focus:ring-destructive/20" : ""
+                  }`}
                 />
                 <button
                   type="button"
@@ -292,6 +321,9 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <p className="mt-1 text-xs text-destructive">{fieldErrors.password}</p>
+              )}
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -308,10 +340,20 @@ export default function RegisterPage() {
                     type="text"
                     placeholder="C.Ps.P. 28419"
                     value={licenseNumber}
-                    onChange={(e) => setLicenseNumber(e.target.value)}
-                    className="h-11 w-full rounded-xl border bg-background pl-9 pr-3 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setLicenseNumber(e.target.value);
+                      if (fieldErrors.licenseNumber) {
+                        setFieldErrors((prev) => ({ ...prev, licenseNumber: "" }));
+                      }
+                    }}
+                    className={`h-11 w-full rounded-xl border bg-background pl-9 pr-3 text-xs outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      fieldErrors.licenseNumber ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
                 </div>
+                {fieldErrors.licenseNumber && (
+                  <p className="mt-1 text-xs text-destructive">{fieldErrors.licenseNumber}</p>
+                )}
               </div>
 
               <div>
@@ -333,10 +375,20 @@ export default function RegisterPage() {
                         : "Consulta Psicológica"
                     }
                     value={clinicName}
-                    onChange={(e) => setClinicName(e.target.value)}
-                    className="h-11 w-full rounded-xl border bg-background pl-9 pr-3 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                    onChange={(e) => {
+                      setClinicName(e.target.value);
+                      if (fieldErrors.clinicName) {
+                        setFieldErrors((prev) => ({ ...prev, clinicName: "" }));
+                      }
+                    }}
+                    className={`h-11 w-full rounded-xl border bg-background pl-9 pr-3 text-xs outline-none transition-colors focus:ring-2 focus:ring-primary/20 ${
+                      fieldErrors.clinicName ? "border-destructive focus:ring-destructive/20" : ""
+                    }`}
                   />
                 </div>
+                {fieldErrors.clinicName && (
+                  <p className="mt-1 text-xs text-destructive">{fieldErrors.clinicName}</p>
+                )}
               </div>
             </div>
 

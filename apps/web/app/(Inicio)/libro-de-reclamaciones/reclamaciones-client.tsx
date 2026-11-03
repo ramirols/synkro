@@ -20,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { reclamacionesSchema, validateForm } from "@/lib/validations";
 
 interface ComplaintData {
   code: string;
@@ -56,13 +58,33 @@ export default function ReclamacionesClient() {
   const [description, setDescription] = useState("");
   const [request, setRequest] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!termsAccepted) {
-      alert("Debes confirmar la veracidad de la información consignada.");
+
+    const validation = validateForm(reclamacionesSchema, {
+      fullName,
+      docType,
+      docNumber,
+      email,
+      phone,
+      address,
+      planName,
+      claimedAmount: claimedAmount || undefined,
+      type: type === "reclamo" ? "Reclamo" : "Queja",
+      description,
+      request,
+      termsAccepted,
+    });
+
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      toast.error(validation.firstError);
       return;
     }
+
+    setFieldErrors({});
 
     setLoading(true);
     setTimeout(() => {
@@ -78,22 +100,23 @@ export default function ReclamacionesClient() {
       const record: ComplaintData = {
         code: generatedCode,
         date: now,
-        fullName,
-        docType,
-        docNumber,
-        email,
-        phone,
-        address,
+        fullName: validation.data.fullName,
+        docType: validation.data.docType,
+        docNumber: validation.data.docNumber,
+        email: validation.data.email,
+        phone: validation.data.phone,
+        address: validation.data.address,
         serviceType: "Software SaaS de Gestión Clínica Synkro",
-        planName,
-        claimedAmount: claimedAmount || "0.00",
+        planName: validation.data.planName,
+        claimedAmount: validation.data.claimedAmount || "0.00",
         type,
-        description,
-        request,
+        description: validation.data.description,
+        request: validation.data.request,
       };
 
       setSubmitted(record);
       setLoading(false);
+      toast.success("Hoja de reclamación registrada con éxito.");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }, 600);
   };
@@ -284,7 +307,7 @@ export default function ReclamacionesClient() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-8 rounded-2xl border bg-card p-6 sm:p-8 shadow-xs">
+            <form onSubmit={handleSubmit} className="space-y-8 rounded-2xl border bg-card p-6 sm:p-8 shadow-xs" noValidate>
               {/* Sección 1: Datos Personales */}
               <div className="space-y-4">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2 border-b pb-2">
@@ -299,12 +322,17 @@ export default function ReclamacionesClient() {
                     </Label>
                     <Input
                       id="fullName"
-                      required
                       placeholder="Ej. Dra. Valeria Quiroz M."
                       value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="text-xs"
+                      onChange={(e) => {
+                        setFullName(e.target.value);
+                        if (fieldErrors.fullName) setFieldErrors((p) => ({ ...p, fullName: "" }));
+                      }}
+                      className={`text-xs ${fieldErrors.fullName ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
+                    {fieldErrors.fullName && (
+                      <p className="text-[11px] text-destructive">{fieldErrors.fullName}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -331,12 +359,17 @@ export default function ReclamacionesClient() {
                     </Label>
                     <Input
                       id="docNumber"
-                      required
                       placeholder="Ej. 45892134"
                       value={docNumber}
-                      onChange={(e) => setDocNumber(e.target.value)}
-                      className="text-xs font-mono"
+                      onChange={(e) => {
+                        setDocNumber(e.target.value);
+                        if (fieldErrors.docNumber) setFieldErrors((p) => ({ ...p, docNumber: "" }));
+                      }}
+                      className={`text-xs font-mono ${fieldErrors.docNumber ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
+                    {fieldErrors.docNumber && (
+                      <p className="text-[11px] text-destructive">{fieldErrors.docNumber}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -346,12 +379,17 @@ export default function ReclamacionesClient() {
                     <Input
                       id="email"
                       type="email"
-                      required
                       placeholder="consultorio@psicologia.pe"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="text-xs"
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: "" }));
+                      }}
+                      className={`text-xs ${fieldErrors.email ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
+                    {fieldErrors.email && (
+                      <p className="text-[11px] text-destructive">{fieldErrors.email}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -361,12 +399,17 @@ export default function ReclamacionesClient() {
                     <Input
                       id="phone"
                       type="tel"
-                      required
                       placeholder="999 123 456"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="text-xs"
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        if (fieldErrors.phone) setFieldErrors((p) => ({ ...p, phone: "" }));
+                      }}
+                      className={`text-xs ${fieldErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
+                    {fieldErrors.phone && (
+                      <p className="text-[11px] text-destructive">{fieldErrors.phone}</p>
+                    )}
                   </div>
 
                   <div className="sm:col-span-2 space-y-1.5">
@@ -375,12 +418,17 @@ export default function ReclamacionesClient() {
                     </Label>
                     <Input
                       id="address"
-                      required
                       placeholder="Av. Javier Prado Este 1234, San Isidro, Lima"
                       value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className="text-xs"
+                      onChange={(e) => {
+                        setAddress(e.target.value);
+                        if (fieldErrors.address) setFieldErrors((p) => ({ ...p, address: "" }));
+                      }}
+                      className={`text-xs ${fieldErrors.address ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
+                    {fieldErrors.address && (
+                      <p className="text-[11px] text-destructive">{fieldErrors.address}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -477,13 +525,18 @@ export default function ReclamacionesClient() {
                   </Label>
                   <Textarea
                     id="description"
-                    required
                     rows={4}
                     placeholder="Describa de manera detallada lo ocurrido, fechas relevantes, número de cuenta o detalles técnicos..."
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="text-xs leading-relaxed"
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                      if (fieldErrors.description) setFieldErrors((p) => ({ ...p, description: "" }));
+                    }}
+                    className={`text-xs leading-relaxed ${fieldErrors.description ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
+                  {fieldErrors.description && (
+                    <p className="text-[11px] text-destructive">{fieldErrors.description}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -492,13 +545,18 @@ export default function ReclamacionesClient() {
                   </Label>
                   <Textarea
                     id="request"
-                    required
                     rows={3}
                     placeholder="Especifique qué solución o acción solicita por parte de VelyonSoft S.A.C."
                     value={request}
-                    onChange={(e) => setRequest(e.target.value)}
-                    className="text-xs leading-relaxed"
+                    onChange={(e) => {
+                      setRequest(e.target.value);
+                      if (fieldErrors.request) setFieldErrors((p) => ({ ...p, request: "" }));
+                    }}
+                    className={`text-xs leading-relaxed ${fieldErrors.request ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
+                  {fieldErrors.request && (
+                    <p className="text-[11px] text-destructive">{fieldErrors.request}</p>
+                  )}
                 </div>
               </div>
 
