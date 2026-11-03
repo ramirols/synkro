@@ -114,9 +114,18 @@ declare
   v_org_id uuid;
   v_author_id uuid;
 begin
+  -- Prevenir cualquier ejecución recursiva si ya estamos dentro de un ciclo de triggers
+  if pg_trigger_depth() > 1 then
+    return NEW;
+  end if;
+
   if NEW.private_notes is not null and length(trim(NEW.private_notes)) > 0 then
-    -- Obtener organización del paciente
+    -- Obtener organización del paciente o del profesional
     select organization_id into v_org_id from public.patients where id = NEW.patient_id;
+    if v_org_id is null then
+      select organization_id into v_org_id from public.professionals where id = NEW.professional_id;
+    end if;
+
     -- Obtener profile_id del profesional o fallback a auth.uid()
     select profile_id into v_author_id from public.professionals where id = NEW.professional_id;
     v_author_id := coalesce(v_author_id, auth.uid());
@@ -138,7 +147,7 @@ begin
         updated_at = now();
     end if;
 
-    -- Limpiar en sessions para garantizar confidencialidad (evitando recursión)
+    -- Limpiar en sessions para garantizar confidencialidad (pg_trigger_depth previene recursión)
     update public.sessions
     set private_notes = null
     where id = NEW.id and private_notes is not null;
@@ -405,13 +414,4 @@ CREATE POLICY "appointments_select_policy" ON public.appointments
     )
   );
 
--- Registrar migración en tabla de control
-CREATE TABLE IF NOT EXISTS supabase_migrations.schema_migrations (
-  version text PRIMARY KEY,
-  statements text[],
-  name text
-);
 
-INSERT INTO supabase_migrations.schema_migrations (version, name)
-VALUES ('20261028230000', 'phase3_clinical_security_vault')
-ON CONFLICT (version) DO NOTHING;

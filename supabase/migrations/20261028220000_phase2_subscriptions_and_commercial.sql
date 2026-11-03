@@ -29,14 +29,22 @@ ALTER TABLE public.subscriptions
   ADD COLUMN IF NOT EXISTS notes text,
   ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
 
--- 2.2 Migración segura de registros históricos sin conceder extensiones ficticias
+-- 2.2 Inicialización segura de registros históricos preservando la continuidad clínica
+-- Si la organización fue creada dentro de los últimos 14 días, se formaliza su periodo de prueba ('trialing').
+-- Si fue creada hace más de 14 días y ya estaba 'active', SE PRESERVA en estado 'active' para no interrumpir
+-- la operación clínica de consultorios preexistentes, documentando en notas la necesidad de revisión comercial manual.
 UPDATE public.subscriptions
 SET
   trial_start_at = coalesce(created_at, now()),
   trial_end_at = coalesce(created_at, now()) + interval '14 days',
   status = CASE
     WHEN coalesce(created_at, now()) + interval '14 days' > now() THEN 'trialing'
-    ELSE 'expired'
+    ELSE status -- Preserva 'active' (u otro estado preexistente legítimo)
+  END,
+  notes = CASE
+    WHEN coalesce(created_at, now()) + interval '14 days' <= now() AND status = 'active' THEN
+      coalesce(nullif(notes, ''), 'Organización preexistente a Fase 2: estado activo preservado para continuidad asistencial. Requiere regularización de periodo de pago.')
+    ELSE notes
   END
 WHERE status = 'active' AND current_period_end IS NULL;
 

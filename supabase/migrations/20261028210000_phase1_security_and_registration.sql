@@ -184,12 +184,35 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 begin
-  -- Solo un superadmin de plataforma puede modificar platform_role o el role de profiles
-  if (new.platform_role is distinct from old.platform_role) or (new.role is distinct from old.role) then
+  -- 1. Regla inmutable: Nadie excepto superadmin puede modificar platform_role
+  if (new.platform_role is distinct from old.platform_role) then
     if not public.is_superadmin() then
-      raise exception 'Operación no autorizada: No tienes permisos para alterar privilegios de rol en profiles.';
+      raise exception 'Operación no autorizada: No tienes permisos para alterar privilegios de platform_role en profiles.';
     end if;
   end if;
+
+  -- 2. Modificación de profiles.role
+  if (new.role is distinct from old.role) then
+    -- Si es superadmin, permitir cualquier cambio de rol legítimo
+    if public.is_superadmin() then
+      return new;
+    end if;
+
+    -- Permitir transición hacia 'patient' ÚNICAMENTE si ocurre dentro de una activación
+    -- formal validada por accept_patient_portal_invitation y existe un paciente activo vinculado
+    if new.role = 'patient' 
+       and current_setting('synkro.portal_activation_in_progress', true) = 'true'
+       and exists (
+         select 1 from public.patients
+         where user_id = new.id and portal_status = 'active'
+       ) then
+      return new;
+    end if;
+
+    -- En cualquier otro caso, prohibir el cambio de rol
+    raise exception 'Operación no autorizada: No tienes permisos para alterar privilegios de rol en profiles.';
+  end if;
+
   return new;
 end;
 $$;

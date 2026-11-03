@@ -131,6 +131,16 @@ begin
     raise exception 'Tu cuenta ya se encuentra vinculada a otro expediente en este centro clínico.';
   end if;
 
+  -- Validar que una cuenta con rol profesional o administrativo en esta clínica no se auto-vincule como paciente
+  if exists (
+    select 1 from public.organization_members
+    where organization_id = v_patient.organization_id
+      and user_id = v_caller_uid
+      and role in ('owner', 'admin', 'psychologist', 'superadmin')
+  ) then
+    raise exception 'Una cuenta con perfil profesional o administrativo no puede ser vinculada como paciente en la misma clínica.';
+  end if;
+
   -- Vincular formalmente la cuenta de Auth con el paciente clínico
   update public.patients
   set user_id = v_caller_uid,
@@ -138,6 +148,9 @@ begin
       portal_invitation_token = null,
       portal_invitation_accepted_at = now()
   where id = v_patient.id;
+
+  -- Establecer contexto seguro en la transacción y actualizar perfil
+  PERFORM set_config('synkro.portal_activation_in_progress', 'true', true);
 
   -- Asegurar que el usuario tenga el rol de 'patient' en profiles
   update public.profiles

@@ -404,6 +404,16 @@ begin
     raise exception 'Tu cuenta ya se encuentra vinculada a otro expediente en este centro clínico.';
   end if;
 
+  -- Validar que una cuenta con rol profesional o administrativo en esta clínica no se auto-vincule como paciente
+  if exists (
+    select 1 from public.organization_members
+    where organization_id = v_patient.organization_id
+      and user_id = v_caller_uid
+      and role in ('owner', 'admin', 'psychologist', 'superadmin')
+  ) then
+    raise exception 'Una cuenta con perfil profesional o administrativo no puede ser vinculada como paciente en la misma clínica.';
+  end if;
+
   -- Vincular formalmente y actualizar datos verificados del paciente
   update public.patients
   set user_id = v_caller_uid,
@@ -416,6 +426,9 @@ begin
       phone = coalesce(nullif(trim(p_phone), ''), phone),
       birth_date = coalesce(p_birth_date, birth_date)
   where id = v_patient.id;
+
+  -- Establecer contexto seguro en la transacción y actualizar perfil
+  PERFORM set_config('synkro.portal_activation_in_progress', 'true', true);
 
   -- Asegurar que el usuario tenga el rol de 'patient' en profiles
   update public.profiles
@@ -459,3 +472,73 @@ end;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.accept_patient_portal_invitation(text, text, text, text, date) TO authenticated;
+
+-- 9. Actualizar admin_update_subscription para admitir el Plan Gratuito ('free')
+CREATE OR REPLACE FUNCTION public.admin_update_subscription(
+  p_organization_id uuid,
+  p_plan text,
+  p_status text,
+  p_extend_days integer DEFAULT NULL,
+  p_notes text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+declare
+  v_sub record;
+  v_new_end timestamptz;
+begin
+  if not public.is_superadmin() then
+    raise exception 'Operación no autorizada: Solo un superadministrador puede modificar suscripciones.';
+  end if;
+
+  if p_plan not in ('free', 'starter', 'professional', 'clinic') then
+    raise exception 'Plan inválido: Debe ser free, starter, professional o clinic.';
+  end if;
+
+  if p_status not in ('trialing', 'active', 'past_due', 'expired', 'cancelled') then
+    raise exception 'Estado inválido: Debe ser trialing, active, past_due, expired o cancelled.';
+  end if;
+
+  select * into v_sub from public.subscriptions where organization_id = p_organization_id;
+  if not found then
+    raise exception 'Suscripción no encontrada.';
+  end if;
+
+  v_new_end := v_sub.current_period_end;
+  if p_extend_days is not null and p_extend_days > 0 then
+    v_new_end := greatest(now(), coalesce(v_new_end, now())) + (p_extend_days || ' days')::interval;
+  end if;
+
+  update public.subscriptions
+  set
+    plan = p_plan,
+    status = p_status,
+    current_period_end = case when p_extend_days is not null then v_new_end else current_period_end end,
+    notes = coalesce(p_notes, notes),
+    updated_at = now()
+  where id = v_sub.id;
+
+  -- Registrar en audit_logs
+  insert into public.audit_logs (user_id, action, table_name, record_id, old_data, new_data)
+  values (
+    auth.uid(),
+    'MANUAL_SUBSCRIPTION_UPDATE',
+    'subscriptions',
+    v_sub.id,
+    jsonb_build_object('old_plan', v_sub.plan, 'old_status', v_sub.status),
+    jsonb_build_object('new_plan', p_plan, 'new_status', p_status, 'notes', p_notes)
+  );
+
+  return jsonb_build_object(
+    'success', true,
+    'plan', p_plan,
+    'status', p_status,
+    'current_period_end', v_new_end
+  );
+end;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_update_subscription(uuid, text, text, integer, text) TO authenticated;

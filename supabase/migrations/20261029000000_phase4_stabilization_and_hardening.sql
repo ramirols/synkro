@@ -17,7 +17,10 @@
 -- 5. Limpieza de tablas temporales residuales.
 -- ==============================================================================
 
--- 1. IDENTIDAD Y VINCULACIÓN EXPLÍCITA DEL PACIENTE
+-- 1. EXTENSIÓN CRIPTOGRÁFICA REQUERIDA PARA TOKENS SEGUROS
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
+
+-- 2. IDENTIDAD Y VINCULACIÓN EXPLÍCITA DEL PACIENTE
 ALTER TABLE public.patients
   ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS portal_invitation_token text,
@@ -160,6 +163,16 @@ begin
     raise exception 'Tu cuenta ya se encuentra vinculada a otro expediente en este centro clínico.';
   end if;
 
+  -- Validar que una cuenta con perfil profesional o administrativo en esta clínica no se auto-vincule como paciente
+  if exists (
+    select 1 from public.organization_members
+    where organization_id = v_patient.organization_id
+      and user_id = v_caller_uid
+      and role in ('owner', 'admin', 'psychologist', 'superadmin')
+  ) then
+    raise exception 'Una cuenta con perfil profesional o administrativo no puede ser vinculada como paciente en la misma clínica.';
+  end if;
+
   -- Vincular explícitamente el paciente a la cuenta
   update public.patients
   set user_id = v_caller_uid,
@@ -173,6 +186,13 @@ begin
   values (v_patient.organization_id, v_caller_uid, 'patient')
   on conflict (organization_id, user_id)
   do update set role = 'patient';
+
+  -- Establecer contexto seguro en la transacción y actualizar perfil
+  PERFORM set_config('synkro.portal_activation_in_progress', 'true', true);
+
+  update public.profiles
+  set role = 'patient'
+  where id = v_caller_uid;
 
   -- Registrar en log de auditoría
   insert into public.audit_logs (
@@ -347,10 +367,4 @@ CREATE POLICY "storage_patient_files_select" ON storage.objects
     )
   );
 
--- 7. LIMPIEZA DE TABLAS TEMPORALES
-DROP TABLE IF EXISTS public.result;
 
--- 8. REGISTRO DE MIGRACIÓN EN TABLA DE CONTROL
-INSERT INTO supabase_migrations.schema_migrations (version, name)
-VALUES ('20261028240000', 'phase4_stabilization_and_hardening')
-ON CONFLICT (version) DO NOTHING;
