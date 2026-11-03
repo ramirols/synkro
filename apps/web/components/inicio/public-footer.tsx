@@ -115,7 +115,7 @@ export default function PublicFooter() {
                 </a>
               </li>
               <li>
-                <Link href="/login" className="hover:text-primary transition-colors">
+                <Link href="/iniciar-sesion" className="hover:text-primary transition-colors">
                   Portal de Acceso para Profesionales
                 </Link>
               </li>
