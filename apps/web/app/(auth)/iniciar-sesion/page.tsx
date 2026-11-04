@@ -19,6 +19,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { loginSchema, validateForm } from "@/lib/validations";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+
 
 function LoginContent() {
   const router = useRouter();
@@ -65,26 +67,7 @@ function LoginContent() {
       }
     } catch (err: any) {
       console.error("Login error:", err);
-      const msg = err.message || "";
-      let userFriendly = "Error al iniciar sesión. Intenta nuevamente.";
-
-      if (msg.includes("Invalid login credentials") || msg.includes("invalid_credentials")) {
-        userFriendly = "Credenciales incorrectas. Verifica tu correo y contraseña.";
-      } else if (msg.includes("Email logins are disabled")) {
-        userFriendly =
-          "El inicio de sesión por correo electrónico se encuentra desactivado en el panel de Supabase Auth (Authentication -> Providers -> Email).";
-      } else if (msg.includes("Email not confirmed") || msg.includes("email_not_confirmed")) {
-        userFriendly =
-          "Tu correo electrónico aún no ha sido confirmado. Por favor revisa tu bandeja de entrada o spam.";
-      } else if (msg.includes("User disabled") || msg.includes("banned")) {
-        userFriendly = "Esta cuenta ha sido deshabilitada temporalmente. Contacta al soporte técnico.";
-      } else if (msg.includes("Too many requests") || msg.includes("over_request_rate_limit")) {
-        userFriendly = "Demasiados intentos fallidos. Por seguridad, espera unos minutos antes de reintentar.";
-      } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
-        userFriendly = "No se pudo conectar con el servidor de Supabase. Revisa tu conexión a internet.";
-      } else if (msg) {
-        userFriendly = msg;
-      }
+      const userFriendly = getFriendlyErrorMessage(err, "Error al iniciar sesión. Intenta nuevamente.");
 
       setErrorMsg(userFriendly);
       toast.error(userFriendly);

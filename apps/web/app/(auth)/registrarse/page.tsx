@@ -22,6 +22,8 @@ import { supabase } from "@/lib/supabase";
 import { getCommercialWhatsAppLink } from "@/lib/config/commercial";
 import { OrganizationType } from "@/lib/config/plans";
 import { registerSchema, validateForm } from "@/lib/validations";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -103,14 +105,15 @@ export default function RegisterPage() {
       router.push("/dashboard");
     } catch (err: any) {
       console.error("Register error:", err);
-      const msg = err.message || "";
-      if (msg.includes("already registered") || msg.includes("already in use")) {
-        toast.error("Ya existe una cuenta con este correo.", {
+      const friendlyMsg = getFriendlyErrorMessage(err, "Error al crear la cuenta. Intenta de nuevo.");
+
+      if (friendlyMsg.includes("Ya existe una cuenta")) {
+        toast.error(friendlyMsg, {
           id: toastId,
           description: "Por favor inicia sesión o recupera tu contraseña.",
         });
       } else {
-        toast.error(msg || "Error al crear la cuenta. Intenta de nuevo.", {
+        toast.error(friendlyMsg, {
           id: toastId,
         });
       }

@@ -6,6 +6,7 @@ import { PatientFile, Patient } from "@/lib/types/clinical";
 import { useClinicalData } from "@/lib/clinical-context";
 import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
 import { toast } from "sonner";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import { documentSchema, validateForm } from "@/lib/validations";
 import {
   FileText,
@@ -224,7 +225,7 @@ export default function DocumentosView() {
       await loadData();
     } catch (err: any) {
       console.error("Error creating document record:", err);
-      const msg = err.message || "Error al registrar documento.";
+      const msg = getFriendlyErrorMessage(err, "Error al registrar documento.");
       setErrorMsg(msg);
       toast.error(msg);
     } finally {

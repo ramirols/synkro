@@ -31,6 +31,8 @@ import {
   loginSchema,
   validateForm,
 } from "@/lib/validations";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+
 
 interface InvitationInfo {
   valid: boolean;
@@ -279,7 +281,7 @@ function ActivarPortalContent() {
       toast.success("¡Tu cuenta de paciente ha sido activada exitosamente!");
     } catch (err: any) {
       console.error("Error en flujo de activación:", err);
-      const errorMsg = err.message || "Ocurrió un error inesperado al procesar tu solicitud.";
+      const errorMsg = getFriendlyErrorMessage(err, "Ocurrió un error inesperado al procesar tu solicitud.");
       setFormError(errorMsg);
       toast.error(errorMsg);
       setActivationStatus("idle");

@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { passwordRecoverySchema, validateForm } from "@/lib/validations";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+
 
 export default function RecuperarContrasenaPage() {
   const [email, setEmail] = useState("");
@@ -74,23 +76,10 @@ export default function RecuperarContrasenaPage() {
       toast.success("Enlace de recuperación enviado por correo electrónico.");
     } catch (err: any) {
       console.error("[RecuperarContrasena] Error:", err);
-      const msg = err.message || "";
-      let friendlyMsg = "No se pudo procesar la solicitud. Revisa el correo ingresado.";
-
-      if (msg.includes("60 seconds") || msg.includes("over_email_send_rate_limit")) {
-        friendlyMsg =
-          "Por motivos de seguridad, solo puedes solicitar un correo cada 60 segundos. Por favor espera antes de volver a intentar.";
-      } else if (msg.includes("Email logins are disabled")) {
-        friendlyMsg =
-          "El inicio de sesión por correo está deshabilitado en Supabase Auth. Habilítalo en Authentication -> Providers -> Email.";
-      } else if (msg.includes("Error sending recovery email") || msg.includes("SMTP")) {
-        friendlyMsg =
-          "Hubo un error al enviar el correo mediante el servidor SMTP (Resend). Verifica que tu cuenta o clave de Resend estén activas.";
-      } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
-        friendlyMsg = "No se pudo conectar con el servidor de Supabase. Revisa tu conexión a internet.";
-      } else if (msg) {
-        friendlyMsg = msg;
-      }
+      const friendlyMsg = getFriendlyErrorMessage(
+        err,
+        "No se pudo procesar la solicitud. Revisa el correo ingresado."
+      );
 
       setErrorMsg(friendlyMsg);
       toast.error(friendlyMsg);

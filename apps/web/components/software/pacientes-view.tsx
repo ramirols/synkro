@@ -6,6 +6,7 @@ import { Patient } from "@/lib/types/clinical";
 import { useClinicalData } from "@/lib/clinical-context";
 import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
 import { toast } from "sonner";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import { patientSchema, validateForm } from "@/lib/validations";
 import {
   Users,
@@ -161,7 +162,7 @@ export default function PacientesView() {
       await loadPatients();
     } catch (err: any) {
       console.error("Error creating patient:", err);
-      const msg = err.message || "Error al registrar paciente.";
+      const msg = getFriendlyErrorMessage(err, "Error al registrar paciente.");
       setErrorMsg(msg);
       toast.error(msg);
     } finally {

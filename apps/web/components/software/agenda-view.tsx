@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useClinicalData } from "@/lib/clinical-context";
 import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
 import { toast } from "sonner";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import { appointmentSchema, validateForm } from "@/lib/validations";
 import {
   CalendarDays,
@@ -223,7 +224,7 @@ export default function AgendaView() {
       await loadData();
     } catch (err: any) {
       console.error("Error creating appointment:", err);
-      const msg = err.message || "Error al agendar cita";
+      const msg = getFriendlyErrorMessage(err, "Error al agendar cita.");
       setErrorMsg(msg);
       toast.error(msg);
     } finally {

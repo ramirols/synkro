@@ -33,6 +33,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useGuidedTour } from "@/components/software/guided-tour";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import {
   profileSettingsSchema,
   changePasswordSettingsSchema,
@@ -204,7 +205,7 @@ function ConfiguracionContent() {
       toast.success("Foto de perfil actualizada exitosamente.", { id: toastId });
     } catch (err: any) {
       console.error("Error al subir avatar:", err);
-      toast.error(err.message || "Error al subir la imagen. Intenta de nuevo.", {
+      toast.error(getFriendlyErrorMessage(err, "Error al subir la imagen. Intenta de nuevo."), {
         id: toastId,
       });
     } finally {
@@ -308,7 +309,7 @@ function ConfiguracionContent() {
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: any) {
       console.error("Error saving profile:", err);
-      toast.error(err.message || "Error al guardar el perfil.");
+      toast.error(getFriendlyErrorMessage(err, "Error al guardar el perfil."));
     } finally {
       setSaving(false);
     }
@@ -352,9 +353,12 @@ function ConfiguracionContent() {
       setConfirmPassword("");
     } catch (err: any) {
       console.error("Error updating password:", err);
-      toast.error(err.message || "Error al actualizar la contraseña.", {
-        id: toastId,
-      });
+      toast.error(
+        getFriendlyErrorMessage(err, "Error al actualizar la contraseña de acceso."),
+        {
+          id: toastId,
+        }
+      );
     } finally {
       setUpdatingPassword(false);
     }

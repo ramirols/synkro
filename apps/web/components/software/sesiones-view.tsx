@@ -26,6 +26,8 @@ import {
   Lock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+
 import { sessionSchema, validateForm } from "@/lib/validations";
 import {
   Select,
@@ -205,7 +207,7 @@ function SesionesContent() {
       await loadData();
     } catch (err: any) {
       console.error("Error creating session:", err);
-      const msg = err.message || "Error al guardar la sesión clínica.";
+      const msg = getFriendlyErrorMessage(err, "Error al guardar la sesión clínica.");
       setErrorMsg(msg);
       toast.error(msg);
     } finally {

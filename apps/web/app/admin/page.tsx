@@ -36,6 +36,8 @@ import {
   adjustSubscriptionSchema,
   validateForm,
 } from "@/lib/validations";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+
 
 interface RealOrganizationItem {
   id: string;
@@ -192,7 +194,7 @@ export default function MasterAdminPage() {
       setTimeout(() => setSelectedOrg(null), 1800);
     } catch (err: any) {
       console.error("Error confirm payment:", err);
-      const msg = err.message || "Error al confirmar el pago.";
+      const msg = getFriendlyErrorMessage(err, "Error al confirmar el pago.");
       setActionErrorMsg(msg);
       toast.error(msg);
     } finally {
@@ -239,7 +241,7 @@ export default function MasterAdminPage() {
       setTimeout(() => setSelectedOrg(null), 1800);
     } catch (err: any) {
       console.error("Error adjust subscription:", err);
-      const msg = err.message || "Error al ajustar la suscripción.";
+      const msg = getFriendlyErrorMessage(err, "Error al ajustar la suscripción.");
       setActionErrorMsg(msg);
       toast.error(msg);
     } finally {

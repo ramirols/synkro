@@ -18,6 +18,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { updatePasswordSchema, validateForm } from "@/lib/validations";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+
 
 function ActualizarContrasenaContent() {
   const router = useRouter();
@@ -128,19 +130,10 @@ function ActualizarContrasenaContent() {
       toast.success("Contraseña actualizada con éxito.", { id: toastId });
     } catch (err: any) {
       console.error("Error al actualizar contraseña:", err);
-      const msg = err.message || "";
-      let friendlyMsg = "No se pudo actualizar la contraseña. El enlace de recuperación puede haber expirado.";
-
-      if (msg.includes("Auth session missing") || msg.includes("session")) {
-        friendlyMsg = "La sesión de recuperación expiró. Por favor solicita un nuevo enlace de recuperación.";
-      } else if (msg.includes("should be different")) {
-        friendlyMsg = "La nueva contraseña debe ser diferente a la anterior.";
-      } else if (msg.includes("at least 6 characters") || msg.includes("at least 8 characters")) {
-        friendlyMsg = "La contraseña debe tener al menos 8 caracteres.";
-      } else if (msg) {
-        friendlyMsg = msg;
-      }
-
+      const friendlyMsg = getFriendlyErrorMessage(
+        err,
+        "No se pudo actualizar la contraseña. El enlace de recuperación puede haber expirado."
+      );
       toast.error(friendlyMsg, { id: toastId });
     } finally {
       setLoading(false);

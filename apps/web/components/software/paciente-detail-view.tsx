@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+
 import { Patient, Session, Appointment, PatientFile } from "@/lib/types/clinical";
 import { useClinicalData } from "@/lib/clinical-context";
 import { notifyDemoWriteBlocked } from "@/lib/demo/clinical-data";
@@ -99,7 +101,7 @@ export default function PacienteDetailView({ id }: { id: string }) {
         portal_status: "invited",
       });
     } catch (err: any) {
-      const msg = err.message || "Error al generar invitación.";
+      const msg = getFriendlyErrorMessage(err, "Error al generar invitación.");
       setInvitationFeedback({
         type: "error",
         message: msg,
@@ -132,7 +134,7 @@ export default function PacienteDetailView({ id }: { id: string }) {
         portal_status: "revoked",
       });
     } catch (err: any) {
-      const msg = err.message || "Error al revocar acceso.";
+      const msg = getFriendlyErrorMessage(err, "Error al revocar acceso.");
       setInvitationFeedback({
         type: "error",
         message: msg,
