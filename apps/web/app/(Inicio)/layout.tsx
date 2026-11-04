@@ -44,20 +44,39 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  icons: {
+    icon: [
+      { url: "/icon.png", type: "image/png" },
+      { url: "/favicon.ico" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+  },
   openGraph: {
     title: "Synkro | Software Clínico para Psicólogos & Centros de Salud Mental",
     description:
       "Moderniza tu práctica psicológica. Historias clínicas, notas SOAP estructuradas, horario semanal y portal seguro para tus pacientes. Pagos por Yape y tarjetas.",
     url: "https://synkro.velyonsoft.com",
-    siteName: "Synkro",
+    siteName: "Synkro by Velyon",
     locale: "es_PE",
     type: "website",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1024,
+        height: 389,
+        alt: "Synkro by Velyon - Gestión clínica inteligente para una salud mental mejor",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Synkro | Software para Psicólogos y Centros Clínicos",
     description:
       "La plataforma clínica creada para que te enfoques en tus pacientes, no en el papeleo. By Velyon.",
+    images: ["/og-image.jpg"],
   },
   robots: {
     index: true,

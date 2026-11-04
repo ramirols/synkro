@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useClinicalData } from "@/lib/clinical-context";
@@ -114,9 +115,16 @@ export default function Sidebar() {
             <Link
               href={basePath || "/dashboard"}
               title="Synkro by Velyon"
-              className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
+              className="flex size-10 items-center justify-center rounded-xl overflow-hidden shadow-sm hover:opacity-90 transition-opacity"
             >
-              <Brain size={20} />
+              <Image
+                src="/icon.png"
+                alt="Synkro"
+                width={40}
+                height={40}
+                className="size-10 rounded-xl object-cover"
+                priority
+              />
             </Link>
             <button
               onClick={toggleSidebar}
@@ -130,9 +138,14 @@ export default function Sidebar() {
           <div>
             <div className="flex items-center justify-between">
               <Link href={basePath || "/dashboard"} className="flex items-center gap-2.5">
-                <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                  <Brain size={20} />
-                </div>
+                <Image
+                  src="/icon.png"
+                  alt="Synkro"
+                  width={36}
+                  height={36}
+                  className="size-9 rounded-xl object-cover shadow-sm"
+                  priority
+                />
                 <div>
                   <span className="text-xl font-bold tracking-tight text-foreground">
                     Synkro

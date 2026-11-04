@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Link } from "next-view-transitions";
 import {
   Brain,
@@ -24,9 +25,13 @@ export default function PublicFooter() {
           {/* Column 1: Brand & Purpose */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
-                <Brain size={18} />
-              </div>
+              <Image
+                src="/icon.png"
+                alt="Synkro Logo"
+                width={36}
+                height={36}
+                className="size-9 rounded-xl object-cover shadow-xs"
+              />
               <span className="text-xl font-bold tracking-tight text-foreground">
                 Synkro
               </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useClinicalData } from "@/lib/clinical-context";
@@ -120,9 +121,14 @@ export default function MobileSidebar() {
                 onClick={() => setIsMobileOpen(false)}
                 className="flex items-center gap-2.5"
               >
-                <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                  <Brain size={20} />
-                </div>
+                <Image
+                  src="/icon.png"
+                  alt="Synkro"
+                  width={36}
+                  height={36}
+                  className="size-9 rounded-xl object-cover shadow-sm"
+                  priority
+                />
                 <div>
                   <span className="text-xl font-bold tracking-tight text-foreground">
                     Synkro

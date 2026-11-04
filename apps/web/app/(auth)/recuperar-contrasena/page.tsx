@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import {
   Brain,
@@ -103,9 +104,14 @@ export default function RecuperarContrasenaPage() {
 
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2.5 text-2xl font-bold tracking-tight text-foreground">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-              <Brain size={20} />
-            </div>
+            <Image
+              src="/icon.png"
+              alt="Synkro"
+              width={36}
+              height={36}
+              className="size-9 rounded-xl object-cover shadow-sm"
+              priority
+            />
             <span>Synkro</span>
           </Link>
           <span className="block text-[11px] font-semibold uppercase tracking-wider text-primary mt-1">

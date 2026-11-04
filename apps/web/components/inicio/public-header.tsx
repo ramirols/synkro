@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { Link } from "next-view-transitions";
 import {
   Brain,
@@ -63,9 +64,14 @@ export default function PublicHeader() {
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-8">
         {/* Logotipo de Marca */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-2xs group-hover:scale-105 transition-transform">
-            <Brain size={20} />
-          </div>
+          <Image
+            src="/icon.png"
+            alt="Synkro Logo"
+            width={36}
+            height={36}
+            className="size-9 rounded-xl object-cover shadow-2xs group-hover:scale-105 transition-transform"
+            priority
+          />
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-lg font-bold tracking-tight text-foreground">
