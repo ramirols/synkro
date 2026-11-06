@@ -54,4 +54,3 @@ export function getWhatsAppUrl(customMessage?: string): string {
   const message = customMessage || siteConfig.whatsappMessage;
   return `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
-
