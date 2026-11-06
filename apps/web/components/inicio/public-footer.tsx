@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { Link } from "next-view-transitions";
 import {
-  Brain,
   MessageCircle,
   ShieldCheck,
   FileText,
@@ -11,18 +10,53 @@ import {
   Building2,
   Calendar,
   CheckCircle2,
+  Mail,
+  Phone,
+  MapPin,
 } from "lucide-react";
+import { siteConfig, socialNetworks, whatsappUrl } from "@/lib/config/site";
+
+function InstagramIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  );
+}
+
+function FacebookIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
+  );
+}
 
 export default function PublicFooter() {
-  const whatsappLink =
-    "https://wa.me/51997676432?text=Hola%20Velyon!%20Deseo%20informaci%C3%B3n%20sobre%20Synkro.";
-
   return (
     <footer className="border-t bg-card text-foreground">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8 space-y-12">
         {/* Main 4-Column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 border-b pb-12">
-          {/* Column 1: Brand & Purpose */}
+          {/* Column 1: Brand, Contact & Social */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
               <Image
@@ -42,6 +76,56 @@ export default function PublicFooter() {
             <p className="text-xs text-muted-foreground leading-relaxed">
               Software de gestión clínica, historias digitales y notas SOAP estructuradas para psicólogos y centros de salud mental en Perú y Latinoamérica.
             </p>
+
+            {/* Datos de contacto oficial */}
+            <div className="space-y-2 text-xs text-muted-foreground pt-1">
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 hover:text-primary transition-colors"
+              >
+                <Phone size={13} className="text-primary/70 shrink-0" />
+                <span>{siteConfig.phoneFormatted}</span>
+              </a>
+              <a
+                href={`mailto:${siteConfig.email}`}
+                className="flex items-center gap-2 hover:text-primary transition-colors"
+              >
+                <Mail size={13} className="text-primary/70 shrink-0" />
+                <span>{siteConfig.email}</span>
+              </a>
+              <div className="flex items-center gap-2 text-muted-foreground/80">
+                <MapPin size={13} className="text-primary/70 shrink-0" />
+                <span>{siteConfig.location}</span>
+              </div>
+            </div>
+
+            {/* Redes sociales oficiales de Velyon */}
+            <div className="pt-2">
+              <span className="block text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Redes Oficiales
+              </span>
+              <div className="flex items-center gap-3">
+                {socialNetworks.map((net) => {
+                  const IconComponent =
+                    net.icon === "instagram" ? InstagramIcon : FacebookIcon;
+                  return (
+                    <a
+                      key={net.name}
+                      href={net.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex size-8 items-center justify-center rounded-lg border border-input bg-background text-muted-foreground hover:bg-muted hover:text-primary transition-colors shadow-2xs"
+                      title={`${net.name} - ${net.handle}`}
+                    >
+                      <IconComponent className="size-4" />
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
               <ShieldCheck size={14} className="shrink-0" />
               <span>Conforme a la Ley N° 28369 (C.Ps.P.)</span>
@@ -110,13 +194,22 @@ export default function PublicFooter() {
               </li>
               <li>
                 <a
-                  href={whatsappLink}
+                  href={whatsappUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
                 >
                   <MessageCircle size={13} />
-                  <span>Soporte Directo por WhatsApp</span>
+                  <span>Soporte WhatsApp (+51 900 083 518)</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`mailto:${siteConfig.email}`}
+                  className="hover:text-primary transition-colors inline-flex items-center gap-1.5"
+                >
+                  <Mail size={13} />
+                  <span>{siteConfig.email}</span>
                 </a>
               </li>
               <li>
@@ -177,7 +270,7 @@ export default function PublicFooter() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs text-muted-foreground">
           <div className="space-y-1">
             <p>
-              © {new Date().getFullYear()} <strong>Synkro</strong> por <strong>VelyonSoft S.A.C.</strong> Todos los derechos reservados. Lima, Perú.
+              © {new Date().getFullYear()} <strong>{siteConfig.brandName}</strong> por <strong>{siteConfig.legalName}</strong>. Todos los derechos reservados. {siteConfig.location}.
             </p>
             <p className="text-[11px] text-muted-foreground/80">
               Tratamiento de datos personales protegido bajo la Ley N° 29733 y supervisado conforme a la Ley N° 28369 del Colegio de Psicólogos del Perú (C.Ps.P.).
@@ -185,8 +278,27 @@ export default function PublicFooter() {
           </div>
 
           <div className="flex flex-wrap items-center gap-5 shrink-0">
+            <div className="flex items-center gap-3">
+              {socialNetworks.map((net) => {
+                const IconComponent =
+                  net.icon === "instagram" ? InstagramIcon : FacebookIcon;
+                return (
+                  <a
+                    key={net.name}
+                    href={net.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-primary transition-colors"
+                    title={net.name}
+                  >
+                    <IconComponent className="size-3.5" />
+                  </a>
+                );
+              })}
+            </div>
+            <span className="text-border">|</span>
             <a
-              href="https://www.velyonsoft.com"
+              href={siteConfig.companyUrl}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"

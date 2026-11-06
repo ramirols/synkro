@@ -6,7 +6,7 @@
 - **Producto:** Synkro
 - **Propietario y Desarrollador:** VelyonSoft (Perú).
 - **Sitio Web Oficial:** https://synkro.velyonsoft.com
-- **WhatsApp Comercial Oficial:** +51 997 676 432
+- **WhatsApp Comercial Oficial:** +51 900 083 518 (contacto@velyonsoft.com)
 - **Stack Tecnológico:** Monorepo pnpm, Next.js 16 (App Router con Turbopack), React 19, TypeScript estricto, Tailwind CSS 4, Supabase (PostgreSQL 15, Auth, Row Level Security estricto y Storage cifrado).
 - **Arquitectura de Datos:** Arquitectura desacoplada mediante `IClinicalDataService` con implementación en memoria para demostración comercial inmediata (`DemoClinicalDataService` en `/demo`) y backend transaccional multi-tenant en producción (`ProductionClinicalDataService`).
 - **Modalidades de Cuenta:**
@@ -19,7 +19,7 @@
 - **Plan Starter:** S/ 49 / mes (PEN). Hasta 20 pacientes activos, 1 profesional titular, horario semanal, notas estructuradas, portal del paciente y soporte por WhatsApp.
 - **Plan Professional:** S/ 89 / mes (PEN). Pacientes ilimitados, 1 profesional titular, notas clínicas estructuradas SOAP completas con plantillas basadas en evidencia (TCC, ACT, Evaluación), bóveda documental de pruebas psicométricas y portal del paciente.
 - **Plan Empresa / Clínica:** S/ 189 / mes (PEN). Hasta 10 psicólogos en equipo, pacientes ilimitados, gestión y reserva de consultorios físicos (boxes), triage y derivaciones internas entre terapeutas, supervisión clínica ética y soporte prioritario.
-- **Activación Transparente sin Cobros Fantasma:** Activación directa y segura en Perú mediante **Yape oficial (997 676 432)** y **Transferencia Bancaria BCP**, con confirmación administrativa por WhatsApp.
+- **Activación Transparente sin Cobros Fantasma:** Activación directa y segura en Perú mediante **Yape oficial (+51 900 083 518)** y **Transferencia Bancaria BCP**, con confirmación administrativa por WhatsApp.
 - **Política de Continuidad Clínica:** Si una suscripción expira, el acceso de escritura se pausa pero la consulta y exportación de expedientes históricos permanece 100% disponible para el terapeuta garantizando la custodia del expediente.
 
 ## Módulos Clínicos y Funcionalidades

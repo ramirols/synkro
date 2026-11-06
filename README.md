@@ -15,7 +15,7 @@
 [![Test Suite](https://img.shields.io/badge/Tests-82%2F82%20Passing%20(100%25)-brightgreen.svg)](#suite-de-pruebas-automatizadas)
 [![Legal Compliance](https://img.shields.io/badge/Compliance-Ley%2028369%20%7C%20Ley%2029733%20%7C%20INDECOPI-purple.svg)](#marco-legal-y-cumplimiento-normativo)
 
-[Sitio Web Oficial](https://synkro.velyonsoft.com) • [Demo Interactiva](https://synkro.velyonsoft.com/demo) • [Precios & Yape](https://synkro.velyonsoft.com/precios) • [Soporte WhatsApp](https://wa.me/51997676432)
+[Sitio Web Oficial](https://synkro.velyonsoft.com) • [Demo Interactiva](https://synkro.velyonsoft.com/demo) • [Precios & Yape](https://synkro.velyonsoft.com/precios) • [Soporte WhatsApp](https://wa.me/51900083518)
 
 </div>
 
@@ -183,7 +183,7 @@ Synkro ofrece una estructura comercial honesta, en moneda local (Soles peruanos 
 | **Canal de Activación** | Registro directo | Yape / Transferencia | Yape / Transferencia | Yape / Factura |
 
 ### Activación Transparente y Sin Tarjetas
-- **Yape Comercial:** Número verificado **+51 997 676 432** a nombre de *VelyonSoft*.
+- **Yape Comercial:** Número verificado **+51 900 083 518** a nombre de *VelyonSoft*.
 - **Transferencia Bancaria:** Banco de Crédito del Perú (BCP).
 - **Activación Administrativa:** El profesional remite la constancia por WhatsApp y el equipo activa el plan en minutos.
 
@@ -339,7 +339,7 @@ Synkro incorpora las mejores prácticas para indexación tradicional (Google, Bi
 ## 👥 Créditos y Licencia
 
 - **Diseño & Desarrollo:** [VelyonSoft S.A.C.](https://www.velyonsoft.com) — Soluciones de Software e Innovación Médica.
-- **Contacto Comercial & Soporte:** WhatsApp [+51 997 676 432](https://wa.me/51997676432) • `soporte@velyonsoft.com`
+- **Contacto Comercial & Soporte:** WhatsApp [+51 900 083 518](https://wa.me/51900083518) • `contacto@velyonsoft.com`
 - **Ubicación:** Lima, Perú.
 - **Licencia:** Software Propietario. Todos los derechos reservados © 2026 VelyonSoft S.A.C.
 

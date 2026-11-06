@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ShieldAlert, ArrowRight, MessageCircle, X } from "lucide-react";
+import { getWhatsAppUrl } from "@/lib/config/site";
 
 export default function DemoReadonlyModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -71,7 +72,9 @@ export default function DemoReadonlyModal() {
           </Link>
 
           <a
-            href="https://wa.me/51997676432?text=Hola%20VelyonSoft,%20estoy%20probando%20la%20demo%20de%20Synkro%20y%20deseo%20activar%20mi%20cuenta"
+            href={getWhatsAppUrl(
+              "Hola VelyonSoft, estoy probando la demo de Synkro y deseo activar mi cuenta"
+            )}
             target="_blank"
             rel="noreferrer"
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 py-2.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500 hover:text-white transition-all shadow-2xs"

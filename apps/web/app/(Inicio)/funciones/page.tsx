@@ -2,6 +2,7 @@ import { Link } from "next-view-transitions";
 import { Brain, CalendarDays, FileText, ShieldCheck, ArrowRight, Sparkles, MessageCircle, HeartHandshake, Users } from "lucide-react";
 import PublicHeader from "@/components/inicio/public-header";
 import PublicFooter from "@/components/inicio/public-footer";
+import { getWhatsAppUrl } from "@/lib/config/site";
 
 export const metadata = {
   title: "Funciones Clínicas Especializadas para Psicólogos | Synkro",
@@ -21,7 +22,9 @@ export const metadata = {
 };
 
 export default function FuncionesPage() {
-  const whatsappLink = "https://wa.me/51997676432?text=Hola%20Velyon!%20Quiero%20conocer%20m%C3%A1s%20sobre%20las%20funciones%20de%20Synkro%20para%20mi%20consulta.";
+  const whatsappLink = getWhatsAppUrl(
+    "¡Hola Velyon! Quiero conocer más sobre las funciones de Synkro para mi consulta."
+  );
 
   return (
     <>

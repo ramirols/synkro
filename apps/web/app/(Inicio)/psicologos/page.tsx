@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getWhatsAppUrl } from "@/lib/config/site";
 import {
   Brain,
   Shield,
@@ -179,7 +180,7 @@ export default function PsicologosLandingPage() {
                 Comenzar con 14 días gratis
               </Link>
               <a
-                href="https://wa.me/51997676432?text=Hola%20VelyonSoft,%20deseo%20información%20sobre%20el%20Plan%20Individual%20de%20Synkro"
+                href={getWhatsAppUrl("Hola VelyonSoft, deseo información sobre el Plan Individual de Synkro")}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-input bg-card px-4 py-3 text-xs font-semibold text-foreground hover:bg-muted"

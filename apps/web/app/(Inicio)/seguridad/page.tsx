@@ -2,6 +2,7 @@ import { Link } from "next-view-transitions";
 import { ShieldCheck, Lock, EyeOff, Server, Check, ArrowRight, MessageCircle } from "lucide-react";
 import PublicHeader from "@/components/inicio/public-header";
 import PublicFooter from "@/components/inicio/public-footer";
+import { getWhatsAppUrl } from "@/lib/config/site";
 
 export const metadata = {
   title: "Seguridad, Privacidad y Secreto Profesional | Synkro",
@@ -19,7 +20,9 @@ export const metadata = {
 };
 
 export default function SeguridadPage() {
-  const whatsappLink = "https://wa.me/51997676432?text=Hola%20Velyon!%20Tengo%20consultas%20sobre%20la%20seguridad%20y%20privacidad%20de%20Synkro.";
+  const whatsappLink = getWhatsAppUrl(
+    "¡Hola Velyon! Tengo consultas sobre la seguridad y privacidad de Synkro."
+  );
 
   return (
     <>

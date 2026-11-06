@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Link } from "next-view-transitions";
 import { FileText, ShieldCheck, ArrowLeft, CheckCircle2, AlertCircle, MessageCircle } from "lucide-react";
+import { siteConfig, getWhatsAppUrl } from "@/lib/config/site";
 
 export const metadata: Metadata = {
   title: "Términos y Condiciones de Uso del Servicio | Synkro by VelyonSoft",
@@ -16,7 +17,9 @@ export const metadata: Metadata = {
 };
 
 export default function TerminosPage() {
-  const whatsappLink = "https://wa.me/51997676432?text=Hola%20Velyon!%20Tengo%20una%20consulta%20sobre%20los%20T%C3%A9rminos%20y%20Condiciones%20de%20Synkro.";
+  const whatsappLink = getWhatsAppUrl(
+    "¡Hola Velyon! Tengo una consulta sobre los Términos y Condiciones de Synkro."
+  );
 
   return (
     <main className="min-h-screen bg-background py-16 px-6">
@@ -137,7 +140,7 @@ export default function TerminosPage() {
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
-                <strong>Métodos Oficiales:</strong> Pagos directos mediante <strong>Yape oficial (997 676 432)</strong> y <strong>Transferencias Bancarias BCP</strong> en moneda nacional (PEN).
+                <strong>Métodos Oficiales:</strong> Pagos directos mediante <strong>Yape oficial ({siteConfig.phoneFormatted})</strong> y <strong>Transferencias Bancarias BCP</strong> en moneda nacional (PEN).
               </li>
               <li>
                 <strong>Activación Asistida:</strong> El comprobante se valida por nuestro equipo administrativo vía WhatsApp activando la suscripción de forma inmediata en el sistema.

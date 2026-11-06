@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getWhatsAppUrl } from "@/lib/config/site";
 import {
   Building2,
   Users,
@@ -86,7 +87,9 @@ export default function CentrosPsicologicosLandingPage() {
               </Link>
 
               <a
-                href="https://wa.me/51997676432?text=Hola%20VelyonSoft,%20represento%20a%20un%20centro%20psicológico%20y%20deseo%20una%20demostración%20para%20mi%20equipo"
+                href={getWhatsAppUrl(
+                  "Hola VelyonSoft, represento a un centro psicológico y deseo una demostración para mi equipo"
+                )}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-2xl border border-input bg-card px-6 py-3.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
@@ -182,7 +185,7 @@ export default function CentrosPsicologicosLandingPage() {
                 Activar 14 días para mi centro
               </Link>
               <a
-                href="https://wa.me/51997676432?text=Hola%20VelyonSoft,%20deseo%20coordinar%20el%20Plan%20Clínica%20de%20Synkro"
+                href={getWhatsAppUrl("Hola VelyonSoft, deseo coordinar el Plan Clínica de Synkro")}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-input bg-card px-4 py-3 text-xs font-semibold text-foreground hover:bg-muted"

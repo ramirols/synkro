@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Link } from "next-view-transitions";
 import { ShieldCheck, Lock, FileText, UserCheck, Mail, ArrowLeft, MessageCircle } from "lucide-react";
+import { siteConfig, getWhatsAppUrl } from "@/lib/config/site";
 
 export const metadata: Metadata = {
   title: "Política de Privacidad y Protección de Datos Personales | Synkro by VelyonSoft",
@@ -17,7 +18,9 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacidadPage() {
-  const whatsappLink = "https://wa.me/51997676432?text=Hola%20Velyon!%20Tengo%20una%20consulta%20sobre%20la%20Pol%C3%ADtica%20de%20Privacidad%20de%20Synkro.";
+  const whatsappLink = getWhatsAppUrl(
+    "¡Hola Velyon! Tengo una consulta sobre la Política de Privacidad de Synkro."
+  );
 
   return (
     <main className="min-h-screen bg-background py-16 px-6">
@@ -145,7 +148,7 @@ export default function PrivacidadPage() {
               Todo titular de datos personales (profesional o paciente) tiene derecho a ejercer sus derechos de <strong>Acceso, Rectificación, Cancelación y Oposición (ARCO)</strong>, conforme a la Ley N° 29733.
             </p>
             <p>
-              Para ejercer estos derechos, el usuario puede remitir una solicitud formal al correo <strong>privacidad@velyonsoft.com</strong> o mediante nuestro canal oficial de WhatsApp, indicando sus nombres completos, documento de identidad (DNI o Carné de Extranjería) y el derecho que desea ejercer.
+              Para ejercer estos derechos, el usuario puede remitir una solicitud formal al correo <strong>{siteConfig.email}</strong> o mediante nuestro canal oficial de WhatsApp (<strong>{siteConfig.phoneFormatted}</strong>), indicando sus nombres completos, documento de identidad (DNI o Carné de Extranjería) y el derecho que desea ejercer.
             </p>
           </section>
 
@@ -183,7 +186,7 @@ export default function PrivacidadPage() {
                 <span>Contactar a Oficial de Privacidad</span>
               </a>
               <span className="text-xs text-muted-foreground font-semibold">
-                Correo: privacidad@velyonsoft.com
+                Correo: {siteConfig.email}
               </span>
             </div>
           </section>

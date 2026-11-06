@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { reclamacionesSchema, validateForm } from "@/lib/validations";
+import { siteConfig, getWhatsAppUrl } from "@/lib/config/site";
 
 interface ComplaintData {
   code: string;
@@ -195,8 +196,8 @@ export default function ReclamacionesClient() {
             </div>
             <div>
               <p className="font-semibold text-foreground">Domicilio Fiscal:</p>
-              <p className="text-muted-foreground">Lima, Perú</p>
-              <p className="text-muted-foreground">Canal oficial: soporte@velyonsoft.com</p>
+              <p className="text-muted-foreground">{siteConfig.location}</p>
+              <p className="text-muted-foreground">Canal oficial: {siteConfig.email}</p>
             </div>
           </div>
 
@@ -271,7 +272,9 @@ export default function ReclamacionesClient() {
               Registrar otra comunicación
             </Button>
             <a
-              href={`https://wa.me/51997676432?text=Hola%20Velyon!%20He%20registrado%20la%20hoja%20de%20reclamaci%C3%B3n%20${submitted.code}%20en%20el%20Libro%20Virtual.`}
+              href={getWhatsAppUrl(
+                `Hola Velyon! He registrado la hoja de reclamación ${submitted.code} en el Libro Virtual.`
+              )}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-600/30 bg-emerald-50 dark:bg-emerald-950/20 px-4 py-2 text-xs font-bold text-emerald-600 hover:bg-emerald-100 transition-colors"
@@ -595,10 +598,10 @@ export default function ReclamacionesClient() {
                 <span>Razón Social del Proveedor</span>
               </div>
               <div className="space-y-1 text-muted-foreground border-b pb-4">
-                <p className="font-semibold text-foreground">VelyonSoft S.A.C.</p>
+                <p className="font-semibold text-foreground">{siteConfig.legalName}</p>
                 <p>Desarrollo de Software y Servicios Digitales</p>
-                <p>Lima, Perú</p>
-                <p>Canal oficial: soporte@velyonsoft.com</p>
+                <p>{siteConfig.location}</p>
+                <p>Canal oficial: {siteConfig.email}</p>
               </div>
 
               <div className="space-y-2 border-b pb-4">
@@ -614,13 +617,13 @@ export default function ReclamacionesClient() {
                   Para consultas operativas, dudas sobre planes o soporte técnico en tiempo real, puede contactar a nuestro equipo de atención directa.
                 </p>
                 <a
-                  href="https://wa.me/51997676432?text=Hola%20Velyon!%20Necesito%20soporte%20sobre%20Synkro."
+                  href={getWhatsAppUrl("Hola Velyon! Necesito soporte sobre Synkro.")}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-600/30 bg-emerald-50 dark:bg-emerald-950/20 py-2.5 font-bold text-emerald-600 hover:bg-emerald-100 transition-colors"
                 >
                   <MessageCircle size={15} />
-                  <span>WhatsApp +51 997 676 432</span>
+                  <span>WhatsApp {siteConfig.phoneFormatted}</span>
                 </a>
               </div>
             </div>

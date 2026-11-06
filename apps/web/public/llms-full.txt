@@ -6,7 +6,7 @@ Este documento detalla la arquitectura técnica, modelo de datos, políticas de 
 - **Nombre comercial:** Synkro
 - **Empresa matriz:** VelyonSoft (Perú)
 - **URL Canónica:** https://synkro.velyonsoft.com
-- **Soporte Comercial Oficial:** WhatsApp +51 997 676 432
+- **Soporte Comercial Oficial:** WhatsApp +51 900 083 518 (contacto@velyonsoft.com)
 - **Propósito:** Software SaaS especializado en gestión clínica para psicólogos independientes y centros psicológicos en el Perú y Latinoamérica.
 
 ## 2. Stack Tecnológico & Arquitectura
@@ -75,7 +75,7 @@ interface IClinicalDataService {
 | **Empresa / Clínica** | S/ 189 | Ilimitados | Hasta 10 | Triage/derivaciones, boxes físicos, supervisión clínica |
 
 ## 7. Canales Legales y Contacto
-- Soporte WhatsApp: +51 997 676 432
+- Soporte WhatsApp: +51 900 083 518
 - Correo Electrónico: contacto@velyonsoft.com
 - Libro de Reclamaciones: https://synkro.velyonsoft.com/libro-de-reclamaciones
 - Sede: Lima, Perú

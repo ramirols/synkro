@@ -1,22 +1,24 @@
 // ==============================================================================
 // SYNKRO — CONFIGURACIÓN COMERCIAL CENTRALIZADA
-// Única fuente de verdad para contacto comercial, WhatsApp y métodos de pago
+// Conectada a siteConfig (única fuente de verdad para contacto comercial, WhatsApp y pagos)
 // ==============================================================================
+
+import { siteConfig } from "./site";
 
 export const COMMERCIAL_CONFIG = {
   // Número comercial oficial para soporte, ventas y comprobantes
-  phone: "997 676 432",
-  phoneFormatted: "+51 997 676 432",
+  phone: siteConfig.phone,
+  phoneFormatted: siteConfig.phoneFormatted,
   countryCode: "51",
-  rawNumber: "997676432",
-  
+  rawNumber: siteConfig.whatsappNumber.replace(/^51/, ""),
+
   // WhatsApp
-  whatsappNumber: "51997676432",
-  whatsappBaseUrl: "https://wa.me/51997676432",
+  whatsappNumber: siteConfig.whatsappNumber,
+  whatsappBaseUrl: `https://wa.me/${siteConfig.whatsappNumber}`,
 
   // Datos para pagos locales manuales en Perú
   yape: {
-    number: "997 676 432",
+    number: siteConfig.phoneFormatted,
     holder: "VelyonSoft / Synkro",
     qrNote: "Acepta Yape y Plin desde cualquier banco.",
   },
@@ -33,9 +35,9 @@ export const COMMERCIAL_CONFIG = {
   trialDurationDays: 14,
   currency: "PEN",
   currencySymbol: "S/",
-  
-  supportEmail: "soporte@synkro.pe",
-  salesEmail: "hola@velyon.pe",
+
+  supportEmail: siteConfig.supportEmail,
+  salesEmail: siteConfig.salesEmail,
 } as const;
 
 /**
@@ -81,4 +83,3 @@ export function getCommercialWhatsAppLink(options: {
 
   return `${COMMERCIAL_CONFIG.whatsappBaseUrl}?text=${encodeURIComponent(message)}`;
 }
-
