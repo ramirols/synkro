@@ -1,10 +1,25 @@
-import { MetadataRoute } from "next";
+
+import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = "https://synkro.velyonsoft.com";
 
+  const privateRoutes = [
+    "/dashboard",
+    "/pacientes",
+    "/agenda",
+    "/sesiones",
+    "/documentos",
+    "/profesionales",
+    "/configuracion",
+    "/suscripcion",
+    "/admin",
+    "/api/",
+  ];
+
   return {
     rules: [
+      // 1. Rastreadores generales
       {
         userAgent: "*",
         allow: [
@@ -26,37 +41,25 @@ export default function robots(): MetadataRoute.Robots {
           "/llms.txt",
           "/llms-full.txt",
         ],
-        disallow: [
-          "/dashboard",
-          "/pacientes",
-          "/agenda",
-          "/sesiones",
-          "/documentos",
-          "/profesionales",
-          "/configuracion",
-          "/suscripcion",
-          "/admin",
-          "/api/",
-        ],
+        disallow: privateRoutes,
       },
+
+      // 2. Buscadores tradicionales (SEO)
       {
         userAgent: ["Googlebot", "Bingbot", "Applebot"],
         allow: "/",
-        disallow: [
-          "/dashboard",
-          "/pacientes",
-          "/agenda",
-          "/sesiones",
-          "/documentos",
-          "/profesionales",
-          "/configuracion",
-          "/suscripcion",
-          "/admin",
-          "/api/",
-        ],
+        disallow: privateRoutes,
       },
+
+      // 3. Rastreadores de IA (GEO)
       {
-        userAgent: ["GPTBot", "ChatGPT-User", "PerplexityBot", "ClaudeBot", "anthropic-ai"],
+        userAgent: [
+          "GPTBot",
+          "ChatGPT-User",
+          "PerplexityBot",
+          "ClaudeBot",
+          "anthropic-ai",
+        ],
         allow: [
           "/",
           "/psicologos",
@@ -70,20 +73,17 @@ export default function robots(): MetadataRoute.Robots {
           "/llms.txt",
           "/llms-full.txt",
         ],
-        disallow: [
-          "/dashboard",
-          "/pacientes",
-          "/agenda",
-          "/sesiones",
-          "/documentos",
-          "/profesionales",
-          "/configuracion",
-          "/suscripcion",
-          "/admin",
-          "/api/",
-        ],
+        disallow: privateRoutes,
+      },
+
+      // 4. Búsquedas de ChatGPT (GEO)
+      {
+        userAgent: "OAI-SearchBot",
+        allow: "/",
+        disallow: privateRoutes,
       },
     ],
+
     sitemap: `${baseUrl}/sitemap.xml`,
   };
 }
